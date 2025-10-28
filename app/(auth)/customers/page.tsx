@@ -3,9 +3,8 @@
 import LoadingSkeleton from '@/components/LoadingSkeleton'
 import { Button } from '@/components/ui/button'
 
-import Notfoundpage from '@/components/Notfoundpage'
 import { PER_PAGE } from '@/lib/constants'
-import { useAppDispatch, useAppSelector } from '@/lib/redux/hook'
+import { useAppDispatch } from '@/lib/redux/hook'
 import { addList } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
@@ -22,8 +21,6 @@ export default function Page() {
 
   const dispatch = useAppDispatch()
 
-  const user = useAppSelector((state) => state.user.user)
-
   // Fetch data on page load
   useEffect(() => {
     dispatch(addList([])) // Reset the list first on page load
@@ -31,7 +28,7 @@ export default function Page() {
     const fetchData = async () => {
       setLoading(true)
       const { data, count, error } = await supabase
-        .from('branches')
+        .from('customers')
         .select('*', { count: 'exact' })
         .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
         .ilike('name', `%${filter}%`)
@@ -51,20 +48,16 @@ export default function Page() {
     fetchData()
   }, [page, filter, dispatch]) // Add `dispatch` to dependency array
 
-  if (user?.type === 'user') {
-    return <Notfoundpage />
-  }
-
   return (
     <div>
       <div className="app__title">
-        <h1 className="text-3xl font-semibold">Branches</h1>
+        <h1 className="text-3xl font-semibold">Customers</h1>
         <Button
           variant="blue"
           onClick={() => setModalAddOpen(true)}
           className="ml-auto"
         >
-          Add Branch
+          Add Customer
         </Button>
       </div>
 

@@ -15,7 +15,7 @@ import { useAppDispatch } from '@/lib/redux/hook'
 import { addItem, updateList } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 
-import { Branch } from '@/types'
+import { Customer } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
@@ -24,10 +24,10 @@ import toast from 'react-hot-toast'
 import { z } from 'zod'
 
 // Always update this on other pages
-type ItemType = Branch
+type ItemType = Customer
 
-const table = 'branches'
-const title = 'Branch'
+const table = 'customers'
+const title = 'Customer'
 
 interface ModalProps {
   isOpen: boolean
@@ -36,7 +36,7 @@ interface ModalProps {
 }
 
 const FormSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, 'Customer Name is required'),
   contact_number: z.string().min(1, 'Contact No is required'),
   address: z.string().min(1, 'Address is required')
 })
@@ -149,7 +149,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="app__formlabel_standard">
-                            Branch Name
+                            Customer Name
                           </FormLabel>
                           <FormControl>
                             <Input

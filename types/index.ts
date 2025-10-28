@@ -258,9 +258,9 @@ export interface Service {
 export interface Customer {
   id: number
   name: string
-  contact_number?: string | null
-  email?: string | null
-  address?: string | null
+  contact_number?: string
+  email?: string
+  address?: string
   created_at: string
 }
 

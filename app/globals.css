@@ -133,7 +133,7 @@
     @apply bg-gray-50 dark:bg-gray-800 border-b hover:bg-amber-50;
   }
   .app__th {
-    @apply py-2 px-2 align-top font-normal;
+    @apply py-2 px-2 align-top font-semibold;
   }
   .app__td {
     @apply py-2 px-2 align-top font-normal;

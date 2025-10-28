@@ -1,4 +1,4 @@
-import { BarChart, Home, ListChecks, Store, Users } from 'lucide-react'
+import { BarChart, Home, ListChecks, Store, User } from 'lucide-react'
 
 import {
   Sidebar,
@@ -25,6 +25,11 @@ export function AppSidebar() {
       url: '/home',
       icon: Home
     },
+    {
+      title: 'Customers',
+      url: '/customers',
+      icon: User
+    },
     ...(user?.type === 'super admin' || user?.type === 'province admin'
       ? [
           {
@@ -45,7 +50,7 @@ export function AppSidebar() {
     {
       title: 'Staff',
       url: '/staff',
-      icon: Users
+      icon: User
     },
     {
       title: 'Branches',
@@ -61,7 +66,14 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem
+                  key={item.title}
+                  style={{
+                    backgroundColor:
+                      pathname === item.url ? '#49494a' : 'transparent'
+                  }}
+                  className="rounded-md"
+                >
                   <SidebarMenuButton asChild>
                     <Link href={item.url}>
                       <item.icon className="text-gray-400" />

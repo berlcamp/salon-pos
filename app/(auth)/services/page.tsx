@@ -3,8 +3,9 @@
 import LoadingSkeleton from '@/components/LoadingSkeleton'
 import { Button } from '@/components/ui/button'
 
+import Notfoundpage from '@/components/Notfoundpage'
 import { PER_PAGE } from '@/lib/constants'
-import { useAppDispatch } from '@/lib/redux/hook'
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hook'
 import { addList } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
@@ -18,6 +19,8 @@ export default function Page() {
   const [modalAddOpen, setModalAddOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('')
+
+  const user = useAppSelector((state) => state.user.user)
 
   const dispatch = useAppDispatch()
 
@@ -47,6 +50,10 @@ export default function Page() {
 
     fetchData()
   }, [page, filter, dispatch]) // Add `dispatch` to dependency array
+
+  if (user?.type === 'user') {
+    return <Notfoundpage />
+  }
 
   return (
     <div>

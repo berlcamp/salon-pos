@@ -43,7 +43,7 @@ import toast from 'react-hot-toast'
 import { z } from 'zod'
 
 // ---------- ZOD SCHEMA ----------
-export const FormSchema = z.object({
+const FormSchema = z.object({
   customer_id: z.coerce.number().min(1, 'Customer required'), // ✅ coercion fixes string->number
   attendants: z.array(z.string()).optional(),
 
@@ -58,7 +58,7 @@ export const FormSchema = z.object({
   service_id: z.coerce.number().optional() // optional because user may not add services
 })
 
-export type FormType = z.infer<typeof FormSchema>
+type FormType = z.infer<typeof FormSchema>
 
 export default function CreateTransactionPage() {
   const form = useForm<FormType>({

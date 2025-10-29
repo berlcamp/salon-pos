@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import BranchSwitcher from './BranchSwitcher'
 import HeaderDropdown from './HeaderDropdownMenu'
 import { Button } from './ui/button'
 import { SidebarTrigger } from './ui/sidebar'
@@ -27,7 +26,7 @@ export default function StickyHeader() {
         </Button>
       </Link>
 
-      <BranchSwitcher />
+      {/* <BranchSwitcher /> */}
 
       {/* Right section: Settings dropdown */}
       <HeaderDropdown />

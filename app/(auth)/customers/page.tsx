@@ -51,7 +51,7 @@ export default function Page() {
     }
 
     fetchData()
-  }, [page, filter, dispatch]) // Add `dispatch` to dependency array
+  }, [page, filter, dispatch, selectedBranchId]) // Add `dispatch` to dependency array
 
   return (
     <div>

@@ -51,7 +51,7 @@ export default function Page() {
     }
 
     fetchData()
-  }, [page, filter, dispatch])
+  }, [page, filter, dispatch, selectedBranchId])
 
   return (
     <div>

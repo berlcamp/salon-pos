@@ -49,7 +49,7 @@ export default function Page() {
     }
 
     fetchData()
-  }, [page, filter, dispatch])
+  }, [page, filter, dispatch, selectedBranchId])
 
   if (user?.type === 'user') return <Notfoundpage />
 

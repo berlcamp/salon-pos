@@ -9,8 +9,8 @@ interface BranchState {
 const initialState: BranchState = {
   selectedBranchId:
     typeof window !== 'undefined'
-      ? Number(localStorage.getItem('selectedBranchId')) || null
-      : null
+      ? Number(localStorage.getItem('selectedBranchId')) || 1
+      : 1
 }
 
 export const branchSlice = createSlice({

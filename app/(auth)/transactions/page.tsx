@@ -8,46 +8,43 @@ import { useAppDispatch, useAppSelector } from '@/lib/redux/hook'
 import { addList } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { AddStockModal } from './AddStockModal'
 import { Filter } from './Filter'
 import { List } from './List'
 
 export default function Page() {
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(1)
-  const [modalAddOpen, setModalAddOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('')
 
-  const user = useAppSelector((state) => state.user.user)
   const dispatch = useAppDispatch()
+  const user = useAppSelector((state) => state.user.user)
 
   const selectedBranchId = useAppSelector(
     (state) => state.branch.selectedBranchId
   )
 
   useEffect(() => {
-    dispatch(addList([])) // reset list
+    dispatch(addList([]))
 
     const fetchData = async () => {
       setLoading(true)
-
       const { data, count, error } = await supabase
-        .from('product_stocks')
-        .select(`*, product:products(id,name,category,unit)`, {
-          count: 'exact'
-        })
+        .from('transactions')
+        .select('*,customer:customer_id(name)', { count: 'exact' })
         .eq('branch_id', selectedBranchId)
-        .ilike('product.name', `%${filter}%`)
+        // .or(
+        //   `reference_number.ilike.%${filter}%,customer.name.ilike.%${filter}%`
+        // )
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
-        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
 
-      if (error) {
-        console.error(error)
-      } else {
+      if (error) console.error(error)
+      else {
         dispatch(addList(data))
         setTotalCount(count || 0)
       }
+
       setLoading(false)
     }
 
@@ -59,15 +56,7 @@ export default function Page() {
   return (
     <div>
       <div className="app__title">
-        <h1 className="text-3xl font-semibold">Product Stocks</h1>
-        <Button
-          variant="blue"
-          onClick={() => setModalAddOpen(true)}
-          className="ml-auto"
-          size="xs"
-        >
-          Add Stock
-        </Button>
+        <h1 className="text-3xl font-semibold">Transactions</h1>
       </div>
 
       <Filter filter={filter} setFilter={setFilter} />
@@ -110,11 +99,6 @@ export default function Page() {
           </Button>
         </div>
       )}
-
-      <AddStockModal
-        isOpen={modalAddOpen}
-        onClose={() => setModalAddOpen(false)}
-      />
     </div>
   )
 }

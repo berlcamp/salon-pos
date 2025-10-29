@@ -1,7 +1,9 @@
 'use client'
 
+import Link from 'next/link'
 import BranchSwitcher from './BranchSwitcher'
 import HeaderDropdown from './HeaderDropdownMenu'
+import { Button } from './ui/button'
 import { SidebarTrigger } from './ui/sidebar'
 
 export default function StickyHeader() {
@@ -17,6 +19,13 @@ export default function StickyHeader() {
       </div>
 
       <div className="flex-1"></div>
+
+      {/* New button linking to /transaction */}
+      <Link href="/transaction">
+        <Button variant="default" className="mr-2">
+          New Transaction
+        </Button>
+      </Link>
 
       <BranchSwitcher />
 

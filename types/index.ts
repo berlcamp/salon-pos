@@ -316,3 +316,18 @@ export type BookingAttendant = {
   booking_id: number
   user_id: number
 }
+
+// types/Transaction.ts
+
+export interface Transaction {
+  id: number
+  org_id: number
+  reference_number: string
+  customer_name?: string | null
+  total_amount: number
+  status: 'completed' | 'pending' | 'returned' | string // extendable for future statuses
+  created_at?: string | null
+  branch_id?: number | null
+  customer_id?: number | null
+  customer?: Customer
+}

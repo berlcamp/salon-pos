@@ -1,4 +1,10 @@
-import { BookOpenCheck, Home, ListChecks, User } from 'lucide-react'
+import {
+  BookOpenCheck,
+  Home,
+  ListChecks,
+  ShoppingCart,
+  User
+} from 'lucide-react'
 
 import {
   Sidebar,
@@ -24,6 +30,11 @@ export function AppSidebar() {
       title: 'Home',
       url: '/home',
       icon: Home
+    },
+    {
+      title: 'Transactions',
+      url: '/transactions',
+      icon: ShoppingCart
     },
     {
       title: 'Bookings',

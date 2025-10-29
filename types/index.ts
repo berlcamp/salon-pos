@@ -226,15 +226,30 @@ export interface Product {
   id: number
   branch_id?: number | null
   name: string
-  description?: string | null
-  category?: string | null
-  price: number
-  cost?: number | null
-  stock: number
-  unit?: string | null
+  description?: string
+  category?: string
+  selling_price: number
+  cost: number
+  stock_qty?: number
+  unit?: string
   is_active: boolean
   created_at: string
   branch?: Branch
+  reorder_point: number
+}
+
+// ===============================
+// PRODUCT Stock
+// ===============================
+export interface ProductStock {
+  id: number
+  product_id: number
+  product?: Product
+  type: string
+  quantity: number
+  remarks: string
+  created_at: string
+  transaction_date: string
 }
 
 // ===============================
@@ -265,57 +280,6 @@ export interface Customer {
 }
 
 // ===============================
-// TRANSACTIONS
-// ===============================
-export interface Transaction {
-  id: number
-  branch_id?: number | null
-  customer_id?: number | null
-  user_id?: number | null // cashier
-  total_amount: number
-  payment_method: 'cash' | 'gcash' | 'card' | 'other'
-  status: 'pending' | 'paid' | 'cancelled'
-  created_at: string
-  branch?: Branch
-  customer?: Customer
-  user?: User
-  items?: TransactionItem[]
-  service_bookings?: ServiceBooking[]
-}
-
-// ===============================
-// TRANSACTION ITEMS (Products sold)
-// ===============================
-export interface TransactionItem {
-  id: number
-  transaction_id: number
-  product_id?: number | null
-  quantity: number
-  price: number
-  subtotal: number
-  product?: Product
-}
-
-// ===============================
-// SERVICE BOOKINGS
-// ===============================
-export interface ServiceBooking {
-  id: number
-  transaction_id?: number | null
-  service_id?: number | null
-  customer_id?: number | null
-  branch_id?: number | null
-  total_price?: number | null
-  start_time?: string | null
-  end_time?: string | null
-  status: 'pending' | 'in_progress' | 'done' | 'cancelled'
-  created_at: string
-  service?: Service
-  customer?: Customer
-  attendants?: ServiceAttendant[]
-}
-
-// ===============================
 // SERVICE ATTENDANTS
 // ===============================
 export interface ServiceAttendant {
@@ -326,4 +290,29 @@ export interface ServiceAttendant {
   commission?: number | null
   created_at: string
   staff?: Staff
+}
+
+export type Booking = {
+  id: number
+  customer_id?: number
+  user_id?: number
+  branch_id: number
+  schedule_date: string
+  time_start: string
+  time_end: string
+  status?: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
+  notes?: string
+  remarks: string
+  org_id: string
+  customer?: Customer
+  branch?: Branch
+  attendants?: string[]
+  service_id?: number
+  service?: Service
+}
+
+export type BookingAttendant = {
+  id: number
+  booking_id: number
+  user_id: number
 }

@@ -1,14 +1,14 @@
 'use client'
 
 import LoadingSkeleton from '@/components/LoadingSkeleton'
+import Notfoundpage from '@/components/Notfoundpage'
 import { Button } from '@/components/ui/button'
-
 import { PER_PAGE } from '@/lib/constants'
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hook'
 import { addList } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { AddModal } from './AddModal'
+import { AddStockModal } from './AddStockModal'
 import { Filter } from './Filter'
 import { List } from './List'
 
@@ -19,31 +19,32 @@ export default function Page() {
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('')
 
+  const user = useAppSelector((state) => state.user.user)
+  const dispatch = useAppDispatch()
+
   const selectedBranchId = useAppSelector(
     (state) => state.branch.selectedBranchId
   )
 
-  const dispatch = useAppDispatch()
-
-  // Fetch data on page load
   useEffect(() => {
-    dispatch(addList([])) // Reset the list first on page load
+    dispatch(addList([])) // reset list
 
     const fetchData = async () => {
       setLoading(true)
+
       const { data, count, error } = await supabase
-        .from('customers')
-        .select('*', { count: 'exact' })
-        .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
+        .from('product_stocks')
+        .select(`*, product:products(id,name,category,unit)`, {
+          count: 'exact'
+        })
         .eq('branch_id', selectedBranchId)
-        .ilike('name', `%${filter}%`)
+        .ilike('product.name', `%${filter}%`)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
-        .order('id', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) {
         console.error(error)
       } else {
-        // Update the list of suppliers in Redux store
         dispatch(addList(data))
         setTotalCount(count || 0)
       }
@@ -51,18 +52,20 @@ export default function Page() {
     }
 
     fetchData()
-  }, [page, filter, dispatch]) // Add `dispatch` to dependency array
+  }, [page, filter, dispatch])
+
+  if (user?.type === 'user') return <Notfoundpage />
 
   return (
     <div>
       <div className="app__title">
-        <h1 className="text-3xl font-semibold">Customers</h1>
+        <h1 className="text-3xl font-semibold">Product Stocks</h1>
         <Button
           variant="blue"
           onClick={() => setModalAddOpen(true)}
           className="ml-auto"
         >
-          Add Customer
+          Add Stock
         </Button>
       </div>
 
@@ -73,10 +76,8 @@ export default function Page() {
         {Math.min(page * PER_PAGE, totalCount)} of {totalCount} results
       </div>
 
-      {/* Pass Redux data to List Table */}
       <List />
 
-      {/* Loading Skeleton */}
       {loading && <LoadingSkeleton />}
 
       {totalCount === 0 && !loading && (
@@ -84,6 +85,7 @@ export default function Page() {
           No records found.
         </div>
       )}
+
       {totalCount > 0 && totalCount > PER_PAGE && (
         <div className="mt-4 text-xs flex justify-center items-center space-x-2">
           <Button
@@ -107,7 +109,11 @@ export default function Page() {
           </Button>
         </div>
       )}
-      <AddModal isOpen={modalAddOpen} onClose={() => setModalAddOpen(false)} />
+
+      <AddStockModal
+        isOpen={modalAddOpen}
+        onClose={() => setModalAddOpen(false)}
+      />
     </div>
   )
 }

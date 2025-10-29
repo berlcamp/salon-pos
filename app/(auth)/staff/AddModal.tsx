@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -227,7 +228,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="app__formlabel_standard">
-                            Email
+                            Google Email
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -237,6 +238,9 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                               {...field}
                             />
                           </FormControl>
+                          <FormDescription>
+                            Google email is use to login
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -299,24 +303,21 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                         <FormItem>
                           <FormLabel>Branch</FormLabel>
                           <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value.toString()}
+                            // Always pass a string to keep it controlled
+                            onValueChange={(value) =>
+                              field.onChange(Number(value))
+                            }
+                            value={field.value ? String(field.value) : ''}
                           >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Branch" />
-                              </SelectTrigger>
-                            </FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select branch" />
+                            </SelectTrigger>
                             <SelectContent>
-                              {branches.map((branch) => (
-                                <SelectItem
-                                  key={branch.id}
-                                  value={branch.id.toString()}
-                                >
-                                  {branch.name}
+                              {branches.map((b) => (
+                                <SelectItem key={b.id} value={b.id.toString()}>
+                                  {b.name}
                                 </SelectItem>
                               ))}
-                              <SelectItem value="admin">Admin</SelectItem>
                             </SelectContent>
                           </Select>
 

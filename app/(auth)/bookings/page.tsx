@@ -2,7 +2,6 @@
 
 import LoadingSkeleton from '@/components/LoadingSkeleton'
 import { Button } from '@/components/ui/button'
-
 import { PER_PAGE } from '@/lib/constants'
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hook'
 import { addList } from '@/lib/redux/listSlice'
@@ -25,44 +24,45 @@ export default function Page() {
 
   const dispatch = useAppDispatch()
 
-  // Fetch data on page load
   useEffect(() => {
-    dispatch(addList([])) // Reset the list first on page load
+    dispatch(addList([]))
 
     const fetchData = async () => {
       setLoading(true)
-      const { data, count, error } = await supabase
-        .from('customers')
-        .select('*', { count: 'exact' })
-        .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
-        .eq('branch_id', selectedBranchId)
-        .ilike('name', `%${filter}%`)
-        .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
-        .order('id', { ascending: false })
 
-      if (error) {
-        console.error(error)
-      } else {
-        // Update the list of suppliers in Redux store
+      const { data, count, error } = await supabase
+        .from('bookings')
+        .select('*, customer:customer_id(name), service:service_id(name)', {
+          count: 'exact'
+        })
+        .eq('branch_id', selectedBranchId)
+        .ilike('remarks', `%${filter}%`)
+        .order('schedule_date', { ascending: false })
+        .order('time_start', { ascending: false })
+        .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
+
+      if (error) console.error(error)
+      else {
         dispatch(addList(data))
         setTotalCount(count || 0)
       }
+
       setLoading(false)
     }
 
     fetchData()
-  }, [page, filter, dispatch]) // Add `dispatch` to dependency array
+  }, [page, filter, dispatch])
 
   return (
     <div>
       <div className="app__title">
-        <h1 className="text-3xl font-semibold">Customers</h1>
+        <h1 className="text-3xl font-semibold">Bookings</h1>
         <Button
           variant="blue"
           onClick={() => setModalAddOpen(true)}
           className="ml-auto"
         >
-          Add Customer
+          Add Booking
         </Button>
       </div>
 
@@ -73,18 +73,16 @@ export default function Page() {
         {Math.min(page * PER_PAGE, totalCount)} of {totalCount} results
       </div>
 
-      {/* Pass Redux data to List Table */}
       <List />
-
-      {/* Loading Skeleton */}
       {loading && <LoadingSkeleton />}
 
-      {totalCount === 0 && !loading && (
-        <div className="mt-4 flex justify-center items-center space-x-2">
-          No records found.
+      {!loading && totalCount === 0 && (
+        <div className="mt-4 text-center text-sm text-gray-500">
+          No bookings found.
         </div>
       )}
-      {totalCount > 0 && totalCount > PER_PAGE && (
+
+      {totalCount > PER_PAGE && (
         <div className="mt-4 text-xs flex justify-center items-center space-x-2">
           <Button
             size="xs"
@@ -107,6 +105,7 @@ export default function Page() {
           </Button>
         </div>
       )}
+
       <AddModal isOpen={modalAddOpen} onClose={() => setModalAddOpen(false)} />
     </div>
   )

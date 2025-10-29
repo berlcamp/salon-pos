@@ -1,4 +1,4 @@
-import { BarChart, Home, ListChecks, Store, User } from 'lucide-react'
+import { BookOpenCheck, Home, ListChecks, User } from 'lucide-react'
 
 import {
   Sidebar,
@@ -26,19 +26,28 @@ export function AppSidebar() {
       icon: Home
     },
     {
+      title: 'Bookings',
+      url: '/bookings',
+      icon: BookOpenCheck
+    },
+    {
       title: 'Customers',
       url: '/customers',
       icon: User
+    }
+  ]
+
+  const inventoryItems = [
+    {
+      title: 'Products',
+      url: '/products',
+      icon: ListChecks
     },
-    ...(user?.type === 'super admin' || user?.type === 'province admin'
-      ? [
-          {
-            title: 'Dashboard',
-            url: '/dashboard',
-            icon: BarChart
-          }
-        ]
-      : [])
+    {
+      title: 'Stocks-In',
+      url: '/productstocks',
+      icon: ListChecks
+    }
   ]
 
   const settingItems = [
@@ -55,7 +64,7 @@ export function AppSidebar() {
     {
       title: 'Branches',
       url: '/branches',
-      icon: Store
+      icon: Home
     }
   ]
 
@@ -66,6 +75,32 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
+                <SidebarMenuItem
+                  key={item.title}
+                  style={{
+                    backgroundColor:
+                      pathname === item.url ? '#49494a' : 'transparent'
+                  }}
+                  className="rounded-md"
+                >
+                  <SidebarMenuButton asChild>
+                    <Link href={item.url}>
+                      <item.icon className="text-gray-400" />
+                      <span className="text-gray-300">{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel className="border-t rounded-none border-gray-600">
+            Inventory
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {inventoryItems.map((item) => (
                 <SidebarMenuItem
                   key={item.title}
                   style={{

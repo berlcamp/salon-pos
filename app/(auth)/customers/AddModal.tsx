@@ -11,7 +11,7 @@ import {
   FormMessage
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { useAppDispatch } from '@/lib/redux/hook'
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hook'
 import { addItem, updateList } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 
@@ -33,6 +33,7 @@ interface ModalProps {
   isOpen: boolean
   onClose: () => void
   editData?: ItemType | null // Optional prop for editing existing item
+  onAdded?: (newCustomer: Customer) => void // ✅ new
 }
 
 const FormSchema = z.object({
@@ -42,10 +43,19 @@ const FormSchema = z.object({
 })
 type FormType = z.infer<typeof FormSchema>
 
-export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
+export const AddModal = ({
+  isOpen,
+  onClose,
+  editData,
+  onAdded
+}: ModalProps) => {
   //
   const [isSubmitting, setIsSubmitting] = useState(false)
   const dispatch = useAppDispatch()
+
+  const selectedBranchId = useAppSelector(
+    (state) => state.branch.selectedBranchId
+  )
 
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
@@ -66,6 +76,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         name: data.name.trim(),
         contact_number: data.contact_number,
         address: data.address,
+        branch_id: selectedBranchId,
         org_id: process.env.NEXT_PUBLIC_ORG_ID
       }
 
@@ -89,12 +100,15 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           .from(table)
           .insert([newData])
           .select()
+          .single()
 
         if (error) {
           throw new Error(error.message)
         } else {
           // Insert new item to Redux
-          dispatch(addItem({ ...newData, id: data[0].id }))
+          dispatch(addItem({ ...newData, id: data.id }))
+          // ✅ trigger callback
+          if (onAdded) onAdded(data)
           onClose()
         }
       }
@@ -154,7 +168,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                           <FormControl>
                             <Input
                               className="app__input_standard"
-                              placeholder="Branch Name"
+                              placeholder="Customer Name"
                               type="text"
                               {...field}
                             />

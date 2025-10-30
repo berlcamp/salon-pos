@@ -81,80 +81,101 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="pt-13">
-      <SidebarContent>
+      <SidebarContent className="bg-white border-r border-gray-200 text-gray-700">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem
-                  key={item.title}
-                  style={{
-                    backgroundColor:
-                      pathname === item.url ? '#49494a' : 'transparent'
-                  }}
-                  className="rounded-md"
-                >
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon className="text-gray-400" />
-                      <span className="text-gray-300">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                const isActive = pathname === item.url
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link
+                        href={item.url}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+                          isActive
+                            ? 'bg-gray-100 text-gray-900 font-medium' // Active item
+                            : 'hover:bg-gray-50 text-gray-700'
+                        }`}
+                      >
+                        <item.icon
+                          className={`text-base ${
+                            isActive ? 'text-blue-600' : 'text-gray-500'
+                          }`}
+                        />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel className="border-t rounded-none border-gray-600">
+          <SidebarGroupLabel className="border-t rounded-none border-gray-200 text-gray-500">
             Inventory
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {inventoryItems.map((item) => (
-                <SidebarMenuItem
-                  key={item.title}
-                  style={{
-                    backgroundColor:
-                      pathname === item.url ? '#49494a' : 'transparent'
-                  }}
-                  className="rounded-md"
-                >
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon className="text-gray-400" />
-                      <span className="text-gray-300">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {inventoryItems.map((item) => {
+                const isActive = pathname === item.url
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link
+                        href={item.url}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+                          isActive
+                            ? 'bg-gray-100 text-gray-900 font-medium' // Active item
+                            : 'hover:bg-gray-50 text-gray-700'
+                        }`}
+                      >
+                        <item.icon
+                          className={`text-base ${
+                            isActive ? 'text-blue-600' : 'text-gray-500'
+                          }`}
+                        />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
         {user?.type === 'admin' && (
           <SidebarGroup>
-            <SidebarGroupLabel className="border-t rounded-none border-gray-600">
+            <SidebarGroupLabel className="border-t rounded-none border-gray-200 text-gray-500">
               Settings
             </SidebarGroupLabel>
             <SidebarGroupContent className="pb-20">
               <SidebarMenu>
-                {settingItems.map((item) => (
-                  <SidebarMenuItem
-                    key={item.title}
-                    style={{
-                      backgroundColor:
-                        pathname === item.url ? '#49494a' : 'transparent'
-                    }}
-                    className="rounded-md"
-                  >
-                    <SidebarMenuButton asChild>
-                      <Link href={item.url}>
-                        <item.icon className="text-gray-400" />
-                        <span className="text-gray-300">{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {settingItems.map((item) => {
+                  const isActive = pathname === item.url
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <Link
+                          href={item.url}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+                            isActive
+                              ? 'bg-gray-100 text-gray-900 font-medium' // Active item
+                              : 'hover:bg-gray-50 text-gray-700'
+                          }`}
+                        >
+                          <item.icon
+                            className={`text-base ${
+                              isActive ? 'text-blue-600' : 'text-gray-500'
+                            }`}
+                          />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

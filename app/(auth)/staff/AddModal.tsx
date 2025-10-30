@@ -206,12 +206,12 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="app__formlabel_standard">
-                            Branch Name
+                            Staff Name
                           </FormLabel>
                           <FormControl>
                             <Input
                               className="app__input_standard"
-                              placeholder="Branch Name"
+                              placeholder="Staff Name"
                               type="text"
                               {...field}
                             />

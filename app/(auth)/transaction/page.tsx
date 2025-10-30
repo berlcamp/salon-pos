@@ -263,321 +263,326 @@ export default function CreateTransactionPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           {/* ---------- Customer ---------- */}
-          <FormField
-            control={form.control}
-            name="customer_id"
-            render={({ field }) => (
-              <FormItem className="mb-4">
-                <FormLabel>Customer</FormLabel>
-                <Popover
-                  open={isAddCustomerOpen}
-                  onOpenChange={setIsAddCustomerOpen}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        'w-full justify-between',
-                        !field.value && 'text-muted-foreground'
-                      )}
-                    >
-                      {selectedCustomer
-                        ? selectedCustomer.name
-                        : 'Select customer'}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-
-                  <PopoverContent className="w-full p-0">
-                    <Command filter={() => 1}>
-                      <CommandInput
-                        placeholder="Search customer..."
-                        onValueChange={(value) => setSearchTerm(value)}
-                      />
-                      {filteredCustomers.length === 0 ? (
-                        <CommandEmpty>
-                          <div className="flex flex-col items-center justify-center gap-2 py-3">
-                            <span>No customer found.</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setAddCustomerOpen(true)
-                                setIsAddCustomerOpen(false)
-                              }}
-                            >
-                              <Plus className="mr-2 h-4 w-4" /> Add new customer
-                            </Button>
-                          </div>
-                        </CommandEmpty>
-                      ) : (
-                        <CommandGroup>
-                          {filteredCustomers.map((c: Customer) => (
-                            <CommandItem
-                              key={c.id}
-                              value={c.id.toString()}
-                              onSelect={() => {
-                                form.setValue('customer_id', Number(c.id))
-                                setIsAddCustomerOpen(false) // ✅ hide dropdown on select
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  c.id.toString() === field.value?.toString()
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
-                                )}
-                              />
-                              {c.name}
-                            </CommandItem>
-                          ))}
-                          <div className="border-t mt-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start mt-1"
-                              onClick={() => {
-                                setAddCustomerOpen(true)
-                                setIsAddCustomerOpen(false)
-                              }}
-                            >
-                              <Plus className="mr-2 h-4 w-4" /> Add new customer
-                            </Button>
-                          </div>
-                        </CommandGroup>
-                      )}
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* ---------- Product Field ---------- */}
-          <FormField
-            control={form.control}
-            name="product_id"
-            render={({ field }) => (
-              <FormItem className="mb-4">
-                <FormLabel>Product</FormLabel>
-                <Popover open={isProductOpen} onOpenChange={setIsProductOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        'w-full justify-between',
-                        !field.value && 'text-muted-foreground'
-                      )}
-                      type="button"
-                    >
-                      {field.value
-                        ? products.find((p) => p.id === field.value)?.name
-                        : 'Select product'}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput
-                        placeholder="Search product..."
-                        onValueChange={(v) => setProductSearchTerm(v)}
-                      />
-                      {filteredProducts.length === 0 ? (
-                        <CommandEmpty>No products found.</CommandEmpty>
-                      ) : (
-                        <CommandGroup>
-                          {filteredProducts.map((p) => {
-                            const alreadyInCart = cartItems.some(
-                              (item) =>
-                                item.item_type === 'product' &&
-                                item.product_id === p.id
-                            )
-                            return (
-                              <CommandItem
-                                key={p.id}
-                                value={p.id.toString()}
-                                disabled={alreadyInCart} // ✅ disable if in cart
-                                onSelect={() => {
-                                  if (!alreadyInCart) {
-                                    field.onChange(p.id)
-                                    addProductToCart(p.id, 1)
-                                  }
-                                  setIsProductOpen(false)
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    'mr-2 h-4 w-4',
-                                    p.id === field.value
-                                      ? 'opacity-100'
-                                      : 'opacity-0'
-                                  )}
-                                />
-                                <div className="flex flex-col">
-                                  <span
-                                    className={cn(
-                                      alreadyInCart && 'opacity-50 line-through'
-                                    )}
-                                  >
-                                    {p.name}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {p.category} • ₱{p.selling_price} • Stock:{' '}
-                                    {p.stock_qty}
-                                  </span>
-                                </div>
-                              </CommandItem>
-                            )
-                          })}
-                        </CommandGroup>
-                      )}
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* ---------- Services Field ---------- */}
-          <FormField
-            control={form.control}
-            name="service_id"
-            render={({ field }) => (
-              <FormItem className="mb-4">
-                <FormLabel>Service</FormLabel>
-                <Popover open={isServiceOpen} onOpenChange={setIsServiceOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        'w-full justify-between',
-                        !field.value && 'text-muted-foreground'
-                      )}
-                      type="button"
-                    >
-                      {field.value
-                        ? services.find((s) => s.id === field.value)?.name
-                        : 'Select service'}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput
-                        placeholder="Search service..."
-                        onValueChange={(v) => setServiceSearchTerm(v)}
-                      />
-                      {filteredServices.length === 0 ? (
-                        <CommandEmpty>No services found.</CommandEmpty>
-                      ) : (
-                        <CommandGroup>
-                          {filteredServices.map((s) => {
-                            const alreadyInCart = cartItems.some(
-                              (item) =>
-                                item.item_type === 'service' &&
-                                item.service_id === s.id
-                            )
-                            return (
-                              <CommandItem
-                                key={s.id}
-                                value={s.id.toString()}
-                                disabled={alreadyInCart} // ✅ disable if already added
-                                onSelect={() => {
-                                  if (!alreadyInCart) {
-                                    field.onChange(s.id)
-                                    addServiceToCart(s.id)
-                                  }
-                                  setIsServiceOpen(false)
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    'mr-2 h-4 w-4',
-                                    s.id === field.value
-                                      ? 'opacity-100'
-                                      : 'opacity-0'
-                                  )}
-                                />
-                                <div className="flex flex-col">
-                                  <span
-                                    className={cn(
-                                      alreadyInCart && 'opacity-50 line-through'
-                                    )}
-                                  >
-                                    {s.name}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    ₱{s.base_price.toFixed(2)}
-                                  </span>
-                                </div>
-                              </CommandItem>
-                            )
-                          })}
-                        </CommandGroup>
-                      )}
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* ATTENDANTS */}
-          {form.watch('service_id') && (
+          <div>
             <FormField
               control={form.control}
-              name="attendants"
+              name="customer_id"
               render={({ field }) => (
                 <FormItem className="mb-4">
-                  <FormLabel
-                    className={
-                      form.formState.errors.attendants ? 'text-red-500' : ''
-                    }
+                  <FormLabel>Customer</FormLabel>
+                  <Popover
+                    open={isAddCustomerOpen}
+                    onOpenChange={setIsAddCustomerOpen}
                   >
-                    Service Attendants
-                  </FormLabel>
-                  <div className="flex flex-wrap gap-2">
-                    {users.map((u) => {
-                      const selected =
-                        field.value?.includes(u.id.toString()) ?? false
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          'w-full justify-between',
+                          !field.value && 'text-muted-foreground'
+                        )}
+                      >
+                        {selectedCustomer
+                          ? selectedCustomer.name
+                          : 'Select customer'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
 
-                      return (
-                        <Button
-                          key={u.id}
-                          type="button"
-                          size="sm"
-                          variant={selected ? 'blue' : 'outline'}
-                          onClick={() => {
-                            const current = field.value ?? []
-                            const exists = current.includes(u.id.toString())
-                            const updated = exists
-                              ? current.filter((id) => id !== u.id.toString())
-                              : [...current, u.id.toString()]
-                            field.onChange(updated)
-                            form.trigger('attendants')
-                          }}
-                        >
-                          {u.name}
-                        </Button>
-                      )
-                    })}
-                  </div>
-
+                    <PopoverContent className="w-full p-0">
+                      <Command filter={() => 1}>
+                        <CommandInput
+                          placeholder="Search customer..."
+                          onValueChange={(value) => setSearchTerm(value)}
+                        />
+                        {filteredCustomers.length === 0 ? (
+                          <CommandEmpty>
+                            <div className="flex flex-col items-center justify-center gap-2 py-3">
+                              <span>No customer found.</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setAddCustomerOpen(true)
+                                  setIsAddCustomerOpen(false)
+                                }}
+                              >
+                                <Plus className="mr-2 h-4 w-4" /> Add new
+                                customer
+                              </Button>
+                            </div>
+                          </CommandEmpty>
+                        ) : (
+                          <CommandGroup>
+                            {filteredCustomers.map((c: Customer) => (
+                              <CommandItem
+                                key={c.id}
+                                value={c.id.toString()}
+                                onSelect={() => {
+                                  form.setValue('customer_id', Number(c.id))
+                                  setIsAddCustomerOpen(false) // ✅ hide dropdown on select
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    c.id.toString() === field.value?.toString()
+                                      ? 'opacity-100'
+                                      : 'opacity-0'
+                                  )}
+                                />
+                                {c.name}
+                              </CommandItem>
+                            ))}
+                            <div className="border-t mt-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start mt-1"
+                                onClick={() => {
+                                  setAddCustomerOpen(true)
+                                  setIsAddCustomerOpen(false)
+                                }}
+                              >
+                                <Plus className="mr-2 h-4 w-4" /> Add new
+                                customer
+                              </Button>
+                            </div>
+                          </CommandGroup>
+                        )}
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
 
+            {/* ---------- Product Field ---------- */}
+            <FormField
+              control={form.control}
+              name="product_id"
+              render={({ field }) => (
+                <FormItem className="mb-4">
+                  <FormLabel>Product</FormLabel>
+                  <Popover open={isProductOpen} onOpenChange={setIsProductOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          'w-full justify-between',
+                          !field.value && 'text-muted-foreground'
+                        )}
+                        type="button"
+                      >
+                        {field.value
+                          ? products.find((p) => p.id === field.value)?.name
+                          : 'Select product'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput
+                          placeholder="Search product..."
+                          onValueChange={(v) => setProductSearchTerm(v)}
+                        />
+                        {filteredProducts.length === 0 ? (
+                          <CommandEmpty>No products found.</CommandEmpty>
+                        ) : (
+                          <CommandGroup>
+                            {filteredProducts.map((p) => {
+                              const alreadyInCart = cartItems.some(
+                                (item) =>
+                                  item.item_type === 'product' &&
+                                  item.product_id === p.id
+                              )
+                              return (
+                                <CommandItem
+                                  key={p.id}
+                                  value={p.id.toString()}
+                                  disabled={alreadyInCart} // ✅ disable if in cart
+                                  onSelect={() => {
+                                    if (!alreadyInCart) {
+                                      field.onChange(p.id)
+                                      addProductToCart(p.id, 1)
+                                    }
+                                    setIsProductOpen(false)
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      p.id === field.value
+                                        ? 'opacity-100'
+                                        : 'opacity-0'
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span
+                                      className={cn(
+                                        alreadyInCart &&
+                                          'opacity-50 line-through'
+                                      )}
+                                    >
+                                      {p.name}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {p.category} • ₱{p.selling_price} • Stock:{' '}
+                                      {p.stock_qty}
+                                    </span>
+                                  </div>
+                                </CommandItem>
+                              )
+                            })}
+                          </CommandGroup>
+                        )}
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* ---------- Services Field ---------- */}
+            <FormField
+              control={form.control}
+              name="service_id"
+              render={({ field }) => (
+                <FormItem className="mb-4">
+                  <FormLabel>Service</FormLabel>
+                  <Popover open={isServiceOpen} onOpenChange={setIsServiceOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          'w-full justify-between',
+                          !field.value && 'text-muted-foreground'
+                        )}
+                        type="button"
+                      >
+                        {field.value
+                          ? services.find((s) => s.id === field.value)?.name
+                          : 'Select service'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput
+                          placeholder="Search service..."
+                          onValueChange={(v) => setServiceSearchTerm(v)}
+                        />
+                        {filteredServices.length === 0 ? (
+                          <CommandEmpty>No services found.</CommandEmpty>
+                        ) : (
+                          <CommandGroup>
+                            {filteredServices.map((s) => {
+                              const alreadyInCart = cartItems.some(
+                                (item) =>
+                                  item.item_type === 'service' &&
+                                  item.service_id === s.id
+                              )
+                              return (
+                                <CommandItem
+                                  key={s.id}
+                                  value={s.id.toString()}
+                                  disabled={alreadyInCart} // ✅ disable if already added
+                                  onSelect={() => {
+                                    if (!alreadyInCart) {
+                                      field.onChange(s.id)
+                                      addServiceToCart(s.id)
+                                    }
+                                    setIsServiceOpen(false)
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      s.id === field.value
+                                        ? 'opacity-100'
+                                        : 'opacity-0'
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span
+                                      className={cn(
+                                        alreadyInCart &&
+                                          'opacity-50 line-through'
+                                      )}
+                                    >
+                                      {s.name}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      ₱{s.base_price.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </CommandItem>
+                              )
+                            })}
+                          </CommandGroup>
+                        )}
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* ATTENDANTS */}
+            {form.watch('service_id') && (
+              <FormField
+                control={form.control}
+                name="attendants"
+                render={({ field }) => (
+                  <FormItem className="mb-4">
+                    <FormLabel
+                      className={
+                        form.formState.errors.attendants ? 'text-red-500' : ''
+                      }
+                    >
+                      Service Attendants
+                    </FormLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {users.map((u) => {
+                        const selected =
+                          field.value?.includes(u.id.toString()) ?? false
+
+                        return (
+                          <Button
+                            key={u.id}
+                            type="button"
+                            size="sm"
+                            variant={selected ? 'blue' : 'outline'}
+                            onClick={() => {
+                              const current = field.value ?? []
+                              const exists = current.includes(u.id.toString())
+                              const updated = exists
+                                ? current.filter((id) => id !== u.id.toString())
+                                : [...current, u.id.toString()]
+                              field.onChange(updated)
+                              form.trigger('attendants')
+                            }}
+                          >
+                            {u.name}
+                          </Button>
+                        )
+                      })}
+                    </div>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
           {/* ---------- Cart Table ---------- */}
           <div className="my-10 border border-gray-600 p-2">
             <Table>

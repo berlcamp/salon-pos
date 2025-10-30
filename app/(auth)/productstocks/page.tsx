@@ -69,52 +69,53 @@ export default function Page() {
           Add Stock
         </Button>
       </div>
+      <div className="app__content">
+        <Filter filter={filter} setFilter={setFilter} />
 
-      <Filter filter={filter} setFilter={setFilter} />
+        <div className="mt-4 py-2 text-xs border-t border-gray-200 text-gray-500">
+          Showing {Math.min((page - 1) * PER_PAGE + 1, totalCount)} to{' '}
+          {Math.min(page * PER_PAGE, totalCount)} of {totalCount} results
+        </div>
 
-      <div className="mt-4 py-2 text-xs border-t border-gray-200 text-gray-500">
-        Showing {Math.min((page - 1) * PER_PAGE + 1, totalCount)} to{' '}
-        {Math.min(page * PER_PAGE, totalCount)} of {totalCount} results
+        <List />
+
+        {loading && <LoadingSkeleton />}
+
+        {totalCount === 0 && !loading && (
+          <div className="mt-4 flex justify-center items-center space-x-2">
+            No records found.
+          </div>
+        )}
+
+        {totalCount > 0 && totalCount > PER_PAGE && (
+          <div className="mt-4 text-xs flex justify-center items-center space-x-2">
+            <Button
+              size="xs"
+              variant="blue"
+              onClick={() => setPage(page - 1)}
+              disabled={page === 1}
+            >
+              {'<<'}
+            </Button>
+            <p>
+              Page {page} of {Math.ceil(totalCount / PER_PAGE)}
+            </p>
+            <Button
+              size="xs"
+              variant="blue"
+              onClick={() => setPage(page + 1)}
+              disabled={page * PER_PAGE >= totalCount}
+            >
+              {'>>'}
+            </Button>
+          </div>
+        )}
+
+        <AddStockModal
+          isOpen={modalAddOpen}
+          onClose={() => setModalAddOpen(false)}
+        />
       </div>
-
-      <List />
-
-      {loading && <LoadingSkeleton />}
-
-      {totalCount === 0 && !loading && (
-        <div className="mt-4 flex justify-center items-center space-x-2">
-          No records found.
-        </div>
-      )}
-
-      {totalCount > 0 && totalCount > PER_PAGE && (
-        <div className="mt-4 text-xs flex justify-center items-center space-x-2">
-          <Button
-            size="xs"
-            variant="blue"
-            onClick={() => setPage(page - 1)}
-            disabled={page === 1}
-          >
-            {'<<'}
-          </Button>
-          <p>
-            Page {page} of {Math.ceil(totalCount / PER_PAGE)}
-          </p>
-          <Button
-            size="xs"
-            variant="blue"
-            onClick={() => setPage(page + 1)}
-            disabled={page * PER_PAGE >= totalCount}
-          >
-            {'>>'}
-          </Button>
-        </div>
-      )}
-
-      <AddStockModal
-        isOpen={modalAddOpen}
-        onClose={() => setModalAddOpen(false)}
-      />
     </div>
   )
 }

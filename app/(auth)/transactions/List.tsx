@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { RootState, Transaction } from '@/types'
 import { format } from 'date-fns'
 import { useState } from 'react'
+import Avatar from 'react-avatar'
 import { useSelector } from 'react-redux'
 import { TransactionDetailsModal } from './TransactionDetailsModal'
 
@@ -32,7 +33,25 @@ export const List = () => {
           {list.map((item: Transaction) => (
             <tr key={item.id} className="app__tr">
               <td className="app__td">{item.reference_number}</td>
-              <td className="app__td">{item.customer?.name || '-'}</td>
+              <td className="app__td">
+                {item.customer ? (
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      name={item.customer.name}
+                      size="30"
+                      round={true}
+                      textSizeRatio={3}
+                      className="shrink-0"
+                      // color="#2a4f6e" // denim base color
+                    />
+                    <span className="text-gray-800 font-medium">
+                      {item.customer.name}
+                    </span>
+                  </div>
+                ) : (
+                  '-'
+                )}
+              </td>
               <td className="app__td">
                 {item.created_at &&
                   format(new Date(item.created_at), 'MMMM dd, yyyy')}

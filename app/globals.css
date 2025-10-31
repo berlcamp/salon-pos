@@ -136,7 +136,7 @@
     @apply py-2 px-2 align-top font-semibold;
   }
   .app__td {
-    @apply py-2 px-2 align-top font-normal;
+    @apply py-2 px-2 align-top font-normal text-xs;
   }
   .app__modal_dialog_panel {
     @apply w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 shadow-lg backdrop-blur-2xl border border-gray-500 rounded-md;

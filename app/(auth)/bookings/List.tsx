@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase/client'
 import { Booking, RootState } from '@/types'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import Avatar from 'react-avatar'
 import toast from 'react-hot-toast'
 import { useSelector } from 'react-redux'
 import { AddModal } from './AddModal'
@@ -65,7 +66,24 @@ export const List = () => {
         <tbody>
           {list.map((item: ItemType) => (
             <tr key={item.id} className="app__tr">
-              <td className="app__td">{item.customer?.name || '—'}</td>
+              <td className="app__td">
+                {item.customer ? (
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      name={item.customer.name}
+                      size="30"
+                      round={true}
+                      textSizeRatio={3}
+                      className="shrink-0"
+                    />
+                    <span className="text-gray-800 font-medium">
+                      {item.customer.name}
+                    </span>
+                  </div>
+                ) : (
+                  '-'
+                )}
+              </td>
               <td className="app__td">{item.service?.name}</td>
               <td className="app__td">
                 {new Date(item.time_start).toLocaleString()}

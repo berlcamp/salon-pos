@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase/client'
 import { Customer, RootState } from '@/types' // Import the RootState type
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import Avatar from 'react-avatar'
 import toast from 'react-hot-toast'
 import { useSelector } from 'react-redux'
 import { AddModal } from './AddModal'
@@ -72,7 +73,18 @@ export const List = ({}) => {
         <tbody>
           {list.map((item: ItemType) => (
             <tr key={item.id} className="app__tr">
-              <td className="app__td">{item.name}</td>
+              <td className="app__td">
+                <div className="flex items-center gap-2">
+                  <Avatar
+                    name={item.name}
+                    size="30"
+                    round={true}
+                    textSizeRatio={3}
+                    className="shrink-0"
+                  />
+                  <span className="text-gray-800 font-medium">{item.name}</span>
+                </div>
+              </td>
               <td className="app__td">{item.contact_number}</td>
               <td className="app__td">{item.address}</td>
               <td className="app__td">

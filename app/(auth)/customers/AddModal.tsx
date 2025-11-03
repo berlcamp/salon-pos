@@ -39,6 +39,7 @@ interface ModalProps {
 const FormSchema = z.object({
   name: z.string().min(1, 'Customer Name is required'),
   contact_number: z.string().min(1, 'Contact No is required'),
+  birthday: z.string().optional(),
   address: z.string().min(1, 'Address is required')
 })
 type FormType = z.infer<typeof FormSchema>
@@ -62,6 +63,7 @@ export const AddModal = ({
     defaultValues: {
       name: editData ? editData.name : '',
       contact_number: editData ? editData.contact_number : '',
+      birthday: editData ? editData.birthday : undefined,
       address: editData ? editData.address : ''
     }
   })
@@ -75,6 +77,7 @@ export const AddModal = ({
       const newData = {
         name: data.name.trim(),
         contact_number: data.contact_number,
+        birthday: data.birthday,
         address: data.address,
         branch_id: selectedBranchId,
         org_id: process.env.NEXT_PUBLIC_ORG_ID
@@ -192,6 +195,28 @@ export const AddModal = ({
                               className="app__input_standard"
                               placeholder="Contact Number"
                               type="text"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name="birthday"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="app__formlabel_standard">
+                            Birthday
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              className="app__input_standard"
+                              placeholder="Birthday"
+                              type="date"
                               {...field}
                             />
                           </FormControl>

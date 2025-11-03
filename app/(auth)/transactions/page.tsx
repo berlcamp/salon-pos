@@ -56,7 +56,7 @@ export default function Page() {
   return (
     <div>
       <div className="app__title">
-        <h1 className="text-3xl font-semibold">Transactions</h1>
+        <h1 className="text-3xl font-normal">Transactions</h1>
       </div>
       <div className="app__content">
         <Filter filter={filter} setFilter={setFilter} />

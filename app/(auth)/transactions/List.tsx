@@ -63,6 +63,7 @@ export const List = () => {
                 <Button
                   variant="outline"
                   size="xs"
+                  className=""
                   onClick={() => handleView(item)}
                 >
                   View Details

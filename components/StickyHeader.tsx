@@ -24,9 +24,9 @@ export default function StickyHeader() {
       <SidebarTrigger />
 
       {/* Left section: Logo */}
-      <div className="flex items-center gap-4">
-        <div className="text-white font-semibold flex items-center">
-          <span>POS</span>
+      <div className="flex items-center">
+        <div className="text-white font-semibold text-2xl flex items-center">
+          <span style={{ fontFamily: 'Literaturnaya, serif' }}>Juana</span>
         </div>
       </div>
 

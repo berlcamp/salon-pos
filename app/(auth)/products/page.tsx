@@ -44,6 +44,7 @@ export default function Page() {
   `,
           { count: 'exact' }
         )
+        .eq('type', 'for sale')
         .eq('branch_id', selectedBranchId)
         .ilike('name', `%${filter}%`)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
@@ -79,7 +80,7 @@ export default function Page() {
   return (
     <div>
       <div className="app__title">
-        <h1 className="text-3xl font-semibold">Products</h1>
+        <h1 className="text-3xl font-normal">Products</h1>
         <Button
           variant="blue"
           onClick={() => setModalAddOpen(true)}

@@ -32,7 +32,7 @@ import { z } from 'zod'
 // Always update this on other pages
 type ItemType = Product
 const table = 'products'
-const title = 'Product'
+const title = 'Item'
 
 interface ModalProps {
   isOpen: boolean
@@ -41,10 +41,9 @@ interface ModalProps {
 }
 
 const FormSchema = z.object({
-  name: z.string().min(1, 'Product name is required'),
+  name: z.string().min(1, 'Item name is required'),
   category: z.string().min(1, 'Category is required'),
   unit: z.string().min(1, 'Unit is required'),
-  selling_price: z.coerce.number().min(0, 'Price is required'),
   reorder_point: z.coerce.number().min(0, 'Reorder level required')
 })
 
@@ -64,7 +63,6 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     defaultValues: {
       name: '',
       category: '',
-      selling_price: 0,
       reorder_point: 5
     }
   })
@@ -76,7 +74,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     try {
       const newData = {
         ...data,
-        type: 'for sale',
+        type: 'internal',
         branch_id: selectedBranchId,
         org_id: process.env.NEXT_PUBLIC_ORG_ID
       }
@@ -115,7 +113,6 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       name: editData?.name || '',
       category: editData?.category || '',
       unit: editData?.unit || '',
-      selling_price: editData?.selling_price || 0,
       reorder_point: editData?.reorder_point || 5
     })
   }, [form, editData, isOpen])
@@ -144,12 +141,12 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="app__formlabel_standard">
-                          Product Name
+                          Item Name
                         </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="Ex. Biogesic Tablet"
+                            placeholder="Ex. Isopropyl alcohol 500ml"
                             className="app__input_standard"
                           />
                         </FormControl>
@@ -215,27 +212,6 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                             ))}
                           </SelectContent>
                         </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="selling_price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="app__formlabel_standard">
-                          Price
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="number"
-                            step="any"
-                            className="app__input_standard"
-                          />
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

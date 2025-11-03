@@ -55,10 +55,9 @@ interface User {
 
 // ---------- ZOD SCHEMA ----------
 const FormSchema = z.object({
-  customer_id: z.coerce.number().min(1, 'Customer required'), // ✅ coercion fixes string->number from inputs
+  customer_id: z.coerce.number().min(1, 'Client is required'), // ✅ coercion fixes string->number from inputs
   schedule_date: z.string().min(1, 'Schedule date is required'),
   time_start: z.string().min(1, 'Start time is required'),
-  time_end: z.string().min(1, 'End time is required'),
   service_id: z.coerce.number().min(1, 'Service is required'), // ✅ coercion fixes string->number from inputs
   attendants: z.array(z.string()).min(1, 'At least one attendant is required'),
   remarks: z.string().optional()
@@ -98,7 +97,6 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       customer_id: editData?.customer_id || 0,
       schedule_date: editData?.schedule_date || '',
       time_start: editData?.time_start || '',
-      time_end: editData?.time_end || '',
       service_id: editData?.service_id || 0,
       attendants: editData?.attendants || [],
       remarks: editData?.remarks || ''
@@ -153,37 +151,11 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     try {
       const org_id = process.env.NEXT_PUBLIC_ORG_ID as string
 
-      // ✅ Conflict Detection
-      const { data: conflictBookings, error: conflictError } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('branch_id', selectedBranchId)
-        .eq('schedule_date', data.schedule_date)
-        .or(
-          `time_start.lte.${toTimestamp(data.schedule_date, data.time_start)},time_end.gte.${toTimestamp(data.schedule_date, data.time_end)}`
-        )
-
-      if (conflictError) throw new Error(conflictError.message)
-
-      // Ignore self if editing
-      const conflicts = conflictBookings?.filter(
-        (b) => !editData || b.id !== editData.id
-      )
-
-      if (conflicts && conflicts.length > 0) {
-        toast.error(
-          '❌ Schedule conflict detected. Please choose another time.'
-        )
-        setIsSubmitting(false)
-        return
-      }
-
       const newData: Omit<Booking, 'id'> = {
         customer_id: data.customer_id,
         branch_id: selectedBranchId,
         schedule_date: data.schedule_date,
         time_start: toTimestamp(data.schedule_date, data.time_start),
-        time_end: toTimestamp(data.schedule_date, data.time_end),
         service_id: data.service_id,
         remarks: data.remarks || '',
         attendants: data.attendants,
@@ -262,7 +234,6 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         customer_id: editData.customer_id,
         schedule_date: editData.schedule_date,
         time_start: formatTime(editData.time_start),
-        time_end: formatTime(editData.time_end),
         service_id: editData.service_id,
         remarks: editData.remarks,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -304,7 +275,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                     name="customer_id"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Customer</FormLabel>
+                        <FormLabel>Client</FormLabel>
                         <Popover
                           open={isAddCustomerOpen}
                           onOpenChange={setIsAddCustomerOpen}
@@ -320,7 +291,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                             >
                               {selectedCustomer
                                 ? selectedCustomer.name
-                                : 'Select customer'}
+                                : 'Select client'}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -328,7 +299,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                           <PopoverContent className="w-full p-0">
                             <Command filter={() => 1}>
                               <CommandInput
-                                placeholder="Search customer..."
+                                placeholder="Search client name..."
                                 onValueChange={(value) => setSearchTerm(value)}
                               />
                               {filteredCustomers.length === 0 ? (
@@ -428,28 +399,13 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                     )}
                   />
 
-                  {/* END TIME */}
-                  <FormField
-                    control={form.control}
-                    name="time_end"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End Time</FormLabel>
-                        <FormControl>
-                          <Input type="time" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   {/* SERVICE */}
                   <FormField
                     control={form.control}
                     name="service_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Service</FormLabel>
+                        <FormLabel>Procedure</FormLabel>
                         <Select
                           // Always pass a string to keep it controlled
                           onValueChange={(value) =>

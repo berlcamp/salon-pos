@@ -7,8 +7,9 @@ import { PER_PAGE } from '@/lib/constants'
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hook'
 import { addList } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
+import { ProductStock } from '@/types'
 import { useEffect, useState } from 'react'
-import { AddStockModal } from './AddStockModal'
+import { AddModal } from './AddModal'
 import { Filter } from './Filter'
 import { List } from './List'
 
@@ -27,46 +28,65 @@ export default function Page() {
   )
 
   useEffect(() => {
-    dispatch(addList([])) // reset list
-
     const fetchData = async () => {
       setLoading(true)
+      dispatch(addList([])) // reset list
 
       const { data, count, error } = await supabase
-        .from('product_stocks')
-        .select(`*, product:products(id,name,category,unit)`, {
-          count: 'exact'
-        })
+        .from('products')
+        .select(
+          `
+    *,
+    product_stocks:product_stocks (
+      quantity,
+      type
+    )
+  `,
+          { count: 'exact' }
+        )
+        .eq('type', 'internal')
         .eq('branch_id', selectedBranchId)
-        .ilike('product.name', `%${filter}%`)
+        .ilike('name', `%${filter}%`)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
-        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
 
       if (error) {
-        console.error(error)
+        console.error('Error fetching products:', error)
       } else {
-        dispatch(addList(data))
+        // calculate stock
+        const formatted = data.map((p) => ({
+          ...p,
+          stock_qty:
+            p.product_stocks?.reduce(
+              (acc: number, s: ProductStock) =>
+                s.type === 'in' ? acc + s.quantity : acc - s.quantity,
+              0
+            ) || 0
+        }))
+        dispatch(addList(formatted || []))
         setTotalCount(count || 0)
       }
+
       setLoading(false)
     }
 
     fetchData()
   }, [page, filter, dispatch, selectedBranchId])
 
-  if (user?.type === 'user') return <Notfoundpage />
+  if (user?.type === 'user') {
+    return <Notfoundpage />
+  }
 
   return (
     <div>
       <div className="app__title">
-        <h1 className="text-3xl font-normal">Product Stocks</h1>
+        <h1 className="text-3xl font-normal">Internal Items</h1>
         <Button
           variant="blue"
           onClick={() => setModalAddOpen(true)}
           className="ml-auto"
-          size="xs"
         >
-          Add Stock
+          Add Item
         </Button>
       </div>
       <div className="app__content">
@@ -111,7 +131,7 @@ export default function Page() {
           </div>
         )}
 
-        <AddStockModal
+        <AddModal
           isOpen={modalAddOpen}
           onClose={() => setModalAddOpen(false)}
         />

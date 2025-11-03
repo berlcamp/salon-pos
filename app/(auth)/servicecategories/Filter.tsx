@@ -35,7 +35,7 @@ export const Filter = ({
       <form onSubmit={handleSubmit(onSubmit)}>
         <Input
           {...register('keyword')}
-          placeholder="Search procedure by name"
+          placeholder="Search category by name"
           className="mb-4 max-w-xs"
         />
         <div className="flex justify-start space-x-2">

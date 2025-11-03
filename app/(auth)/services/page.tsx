@@ -58,13 +58,13 @@ export default function Page() {
   return (
     <div>
       <div className="app__title">
-        <h1 className="text-3xl font-semibold">Services</h1>
+        <h1 className="text-3xl font-normal">Procedures</h1>
         <Button
           variant="blue"
           onClick={() => setModalAddOpen(true)}
           className="ml-auto"
         >
-          Add Service
+          Add Procedue
         </Button>
       </div>
       <div className="app__content">

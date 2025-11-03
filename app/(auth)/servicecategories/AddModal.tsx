@@ -25,7 +25,7 @@ import { z } from 'zod'
 
 // Always update this on other pages
 type ItemType = Service
-const table = 'services'
+const table = 'service_categories'
 const title = 'Services'
 
 interface ModalProps {
@@ -35,8 +35,7 @@ interface ModalProps {
 }
 
 const FormSchema = z.object({
-  name: z.string().min(1, 'Service Name is required'),
-  base_price: z.coerce.number().min(0, 'Base Price is required') // ✅ coercion fixes string->number from inputs
+  name: z.string().min(1, 'Category Name is required')
 })
 type FormType = z.infer<typeof FormSchema>
 
@@ -48,8 +47,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: editData ? editData.name : '',
-      base_price: editData ? editData.base_price : 0
+      name: editData ? editData.name : ''
     }
   })
 
@@ -61,7 +59,6 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     try {
       const newData = {
         name: data.name.trim(),
-        base_price: data.base_price,
         org_id: process.env.NEXT_PUBLIC_ORG_ID
       }
 
@@ -105,8 +102,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
   useEffect(() => {
     form.reset({
-      name: editData?.name || '',
-      base_price: editData?.base_price || 0
+      name: editData?.name || ''
     })
   }, [form, editData, isOpen])
 
@@ -144,36 +140,13 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="app__formlabel_standard">
-                            Procedue Name
+                            Category Name
                           </FormLabel>
                           <FormControl>
                             <Input
                               className="app__input_standard"
-                              placeholder="Ex. Hair and Make-up"
+                              placeholder="Ex. Drip"
                               type="text"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div>
-                    <FormField
-                      control={form.control}
-                      name="base_price"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="app__formlabel_standard">
-                            Base Price
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              className="app__input_standard"
-                              placeholder="Price"
-                              type="number"
-                              step="any"
                               {...field}
                             />
                           </FormControl>

@@ -63,8 +63,7 @@ export const List = ({}) => {
       <table className="app__table">
         <thead className="app__thead">
           <tr>
-            <th className="app__th">Procedue Name</th>
-            <th className="app__th">Base Price</th>
+            <th className="app__th">Category</th>
             <th className="app__th"></th>
           </tr>
         </thead>
@@ -72,7 +71,6 @@ export const List = ({}) => {
           {list.map((item: ItemType) => (
             <tr key={item.id} className="app__tr">
               <td className="app__td">{item.name}</td>
-              <td className="app__td">{item.base_price}</td>
               <td className="app__td">
                 <div className="flex items-center justify-center gap-2">
                   {' '}

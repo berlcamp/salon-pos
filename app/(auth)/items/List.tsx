@@ -5,57 +5,39 @@ import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/lib/redux/hook'
 import { deleteItem } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
-import { RootState, Service } from '@/types' // Import the RootState type
+import { Product, RootState } from '@/types'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { useSelector } from 'react-redux'
 import { AddModal } from './AddModal'
 
-// Always update this on other pages
-type ItemType = Service
-const table = 'services'
+// view table
+const table = 'products'
 
-export const List = ({}) => {
+export const List = () => {
   const dispatch = useAppDispatch()
   const list = useSelector((state: RootState) => state.list.value)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalAddOpen, setModalAddOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<Product | null>(null)
 
-  const [selectedItem, setSelectedItem] = useState<ItemType | null>(null)
-
-  // Handle opening the confirmation modal for deleting a supplier
-  const handleDeleteConfirmation = (item: ItemType) => {
-    setSelectedItem(item)
-    setIsModalOpen(true)
-  }
-
-  const handleEdit = (item: ItemType) => {
-    setSelectedItem(item)
-    setModalAddOpen(true)
-  }
-
-  // Delete Supplier
   const handleDelete = async () => {
-    if (selectedItem) {
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq('id', selectedItem.id)
-
-      if (error) {
-        if (error.code === '23503') {
-          toast.error(`Selected record cannot be deleted.`)
-        }
-      } else {
-        toast.success('Successfully deleted!')
-
-        // delete item to Redux
-        dispatch(deleteItem(selectedItem))
-        setIsModalOpen(false)
-      }
+    if (!selectedItem) return
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .eq('id', selectedItem.id)
+    if (error) {
+      if (error.code === '23503')
+        toast.error('Selected record cannot be deleted.')
+      else toast.error(error.message)
+      return
     }
+    toast.success('Successfully deleted!')
+    dispatch(deleteItem(selectedItem))
+    setIsModalOpen(false)
   }
 
   return (
@@ -63,36 +45,52 @@ export const List = ({}) => {
       <table className="app__table">
         <thead className="app__thead">
           <tr>
-            <th className="app__th">Procedue Name</th>
-            <th className="app__th">Base Price</th>
+            <th className="app__th">Item Name</th>
+            <th className="app__th">Category</th>
+            <th className="app__th text-right">Stock</th>
             <th className="app__th"></th>
           </tr>
         </thead>
         <tbody>
-          {list.map((item: ItemType) => (
+          {list.map((item) => (
             <tr key={item.id} className="app__tr">
-              <td className="app__td">{item.name}</td>
-              <td className="app__td">{item.base_price}</td>
+              <td className="app__td">
+                {item.name} ({item.unit})
+              </td>
+              <td className="app__td">{item.category || '-'}</td>
+
+              <td
+                className={`app__td text-right ${
+                  item.total_remaining <= (item.reorder_point || 0)
+                    ? 'text-red-500 font-semibold'
+                    : ''
+                }`}
+              >
+                {item.stock_qty}
+              </td>
               <td className="app__td">
                 <div className="flex items-center justify-center gap-2">
-                  {' '}
                   <Button
                     variant="outline"
                     size="xs"
-                    onClick={() => handleEdit(item)}
+                    onClick={() => {
+                      setSelectedItem(item)
+                      setModalAddOpen(true)
+                    }}
                   >
-                    {' '}
-                    <Pencil className="w-4 h-4" />{' '}
-                  </Button>{' '}
+                    <Pencil className="w-4 h-4" />
+                  </Button>
                   <Button
                     variant="outline"
                     size="xs"
                     className="text-red-500"
-                    onClick={() => handleDeleteConfirmation(item)}
+                    onClick={() => {
+                      setSelectedItem(item)
+                      setIsModalOpen(true)
+                    }}
                   >
-                    {' '}
-                    <Trash2 className="w-4 h-4" />{' '}
-                  </Button>{' '}
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </td>
             </tr>
@@ -104,8 +102,9 @@ export const List = ({}) => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleDelete}
-        message="Are you sure you want to delete this?"
+        message="Are you sure you want to delete this product?"
       />
+
       <AddModal
         isOpen={modalAddOpen}
         editData={selectedItem}

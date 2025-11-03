@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { AddModal as AddCustomerModal } from '@/app/(auth)/customers/AddModal'
@@ -12,7 +11,9 @@ import {
 } from '@/components/ui/command'
 import {
   Form,
+  FormControl,
   FormField,
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   FormItem,
   FormLabel,
   FormMessage
@@ -23,6 +24,13 @@ import {
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -53,6 +61,7 @@ const FormSchema = z.object({
     .number()
     .min(1, 'Quantity must be at least 1')
     .optional(),
+  payment_type: z.string().min(1, 'Payment Type is required'),
 
   // Service selection
   service_id: z.coerce.number().optional() // optional because user may not add services
@@ -110,6 +119,8 @@ export default function CreateTransactionPage() {
           {
             org_id: Number(process.env.NEXT_PUBLIC_ORG_ID),
             customer_id: data.customer_id,
+            reference_number: Math.floor(1000000 + Math.random() * 9000000), // ✅ random 7-digit number
+            payment_type: data.payment_type,
             total_amount: totalAmount,
             branch_id: selectedBranchId
           }
@@ -365,7 +376,7 @@ export default function CreateTransactionPage() {
               name="product_id"
               render={({ field }) => (
                 <FormItem className="mb-4">
-                  <FormLabel>Product</FormLabel>
+                  <FormLabel>Product Purhcased</FormLabel>
                   <Popover open={isProductOpen} onOpenChange={setIsProductOpen}>
                     <PopoverTrigger asChild>
                       <Button
@@ -454,7 +465,7 @@ export default function CreateTransactionPage() {
               name="service_id"
               render={({ field }) => (
                 <FormItem className="mb-4">
-                  <FormLabel>Service</FormLabel>
+                  <FormLabel>Procedures</FormLabel>
                   <Popover open={isServiceOpen} onOpenChange={setIsServiceOpen}>
                     <PopoverTrigger asChild>
                       <Button
@@ -468,7 +479,7 @@ export default function CreateTransactionPage() {
                       >
                         {field.value
                           ? services.find((s) => s.id === field.value)?.name
-                          : 'Select service'}
+                          : 'Select procedure'}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
@@ -476,7 +487,7 @@ export default function CreateTransactionPage() {
                     <PopoverContent className="w-full p-0">
                       <Command>
                         <CommandInput
-                          placeholder="Search service..."
+                          placeholder="Search procedure..."
                           onValueChange={(v) => setServiceSearchTerm(v)}
                         />
                         {filteredServices.length === 0 ? (
@@ -584,7 +595,7 @@ export default function CreateTransactionPage() {
             )}
           </div>
           {/* ---------- Cart Table ---------- */}
-          <div className="my-10 border border-gray-600 p-2">
+          <div className="my-8 border border-gray-600 p-2 bg-white">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -658,6 +669,37 @@ export default function CreateTransactionPage() {
               Total: ₱{totalAmount.toFixed(2)}
             </div>
           </div>
+
+          {/* CATEGORY DROPDOWN */}
+          <FormField
+            control={form.control}
+            name="payment_type"
+            render={({ field }) => (
+              <FormItem className="my-4 w-full">
+                <FormLabel className="app__formlabel_standard">
+                  Payment Method
+                </FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl className="bg-white">
+                    <SelectTrigger className="app__input_standard">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Cash">Cash</SelectItem>
+                    <SelectItem value="Credit Card">Credit Card</SelectItem>
+                    <SelectItem value="GCash">GCash</SelectItem>
+                    <SelectItem value="Maya">Maya</SelectItem>
+                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           {/* ---------- Submit ---------- */}
           <Button type="submit" className="w-full">

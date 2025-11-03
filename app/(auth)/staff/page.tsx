@@ -58,7 +58,7 @@ export default function Page() {
   return (
     <div>
       <div className="app__title">
-        <h1 className="text-3xl font-semibold">Staff</h1>
+        <h1 className="text-3xl font-normal">Staff</h1>
         <Button
           variant="blue"
           onClick={() => setModalAddOpen(true)}

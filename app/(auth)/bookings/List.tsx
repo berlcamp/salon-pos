@@ -56,9 +56,8 @@ export const List = () => {
         <thead className="app__thead">
           <tr>
             <th className="app__th">Customer</th>
-            <th className="app__th">Service</th>
-            <th className="app__th">Start Time</th>
-            <th className="app__th">End Time</th>
+            <th className="app__th">Procedure</th>
+            <th className="app__th">Schedule</th>
             <th className="app__th">Status</th>
             <th className="app__th"></th>
           </tr>
@@ -86,10 +85,7 @@ export const List = () => {
               </td>
               <td className="app__td">{item.service?.name}</td>
               <td className="app__td">
-                {new Date(item.time_start).toLocaleString()}
-              </td>
-              <td className="app__td">
-                {new Date(item.time_end).toLocaleString()}
+                {item.schedule_date} - {item.time_start}
               </td>
               <td className="app__td capitalize">{item.status}</td>
               <td className="app__td">

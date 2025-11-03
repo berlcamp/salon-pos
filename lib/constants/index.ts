@@ -56,3 +56,9 @@ export const productUnits = [
   'mcg',
   'iu'
 ]
+export const procedureCategories = [
+  'Drip',
+  'Slimming, Toning & Contouring',
+  'Facial',
+  'Whitening & Rejuvenating'
+]

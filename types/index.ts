@@ -230,6 +230,7 @@ export interface Product {
   category?: string
   selling_price: number
   cost: number
+  type: 'for sale' | 'internal'
   stock_qty?: number
   unit?: string
   is_active: boolean
@@ -273,6 +274,7 @@ export interface Service {
 export interface Customer {
   id: number
   name: string
+  birthday?: string
   contact_number?: string
   email?: string
   address?: string
@@ -299,7 +301,6 @@ export type Booking = {
   branch_id: number
   schedule_date: string
   time_start: string
-  time_end: string
   status?: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
   notes?: string
   remarks: string
@@ -323,6 +324,7 @@ export interface Transaction {
   id: number
   org_id: number
   reference_number: string
+  payment_type: string
   customer_name?: string | null
   total_amount: number
   status: 'completed' | 'pending' | 'returned' | string // extendable for future statuses

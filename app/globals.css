@@ -114,6 +114,12 @@
 }
 
 @layer base {
+  @font-face {
+    font-family: 'Literaturnaya';
+    src: url('/fonts/Literaturnaya Book.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+  }
   * {
     @apply border-border outline-ring/50;
   }

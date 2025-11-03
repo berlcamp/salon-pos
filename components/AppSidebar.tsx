@@ -42,7 +42,7 @@ export function AppSidebar() {
       icon: BookOpenCheck
     },
     {
-      title: 'Customers',
+      title: 'Clients',
       url: '/customers',
       icon: User
     }
@@ -55,7 +55,12 @@ export function AppSidebar() {
       icon: ListChecks
     },
     {
-      title: 'Stocks-In',
+      title: 'Internal Items',
+      url: '/items',
+      icon: ListChecks
+    },
+    {
+      title: 'Stocks in/out',
       url: '/productstocks',
       icon: ListChecks
     }
@@ -63,8 +68,13 @@ export function AppSidebar() {
 
   const settingItems = [
     {
-      title: 'Services',
+      title: 'Procedures',
       url: '/services',
+      icon: ListChecks
+    },
+    {
+      title: 'Procedure Categories',
+      url: '/servicecategories',
       icon: ListChecks
     },
     {

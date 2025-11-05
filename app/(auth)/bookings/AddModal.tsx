@@ -405,7 +405,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                     name="service_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Procedure</FormLabel>
+                        <FormLabel>Procedures</FormLabel>
                         <Select
                           // Always pass a string to keep it controlled
                           onValueChange={(value) =>
@@ -442,7 +442,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                               : ''
                           }
                         >
-                          Service Attendants
+                          Docdors
                         </FormLabel>
                         <div className="flex flex-wrap gap-2">
                           {users.map((u) => (

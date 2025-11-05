@@ -64,14 +64,16 @@ export const List = ({}) => {
         <thead className="app__thead">
           <tr>
             <th className="app__th">Procedue Name</th>
-            <th className="app__th">Base Price</th>
+            <th className="app__th">Per Session Price</th>
             <th className="app__th"></th>
           </tr>
         </thead>
         <tbody>
           {list.map((item: ItemType) => (
             <tr key={item.id} className="app__tr">
-              <td className="app__td">{item.name}</td>
+              <td className="app__td">
+                {item.name} ({item.category?.name})
+              </td>
               <td className="app__td">{item.base_price}</td>
               <td className="app__td">
                 <div className="flex items-center justify-center gap-2">

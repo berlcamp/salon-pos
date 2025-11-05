@@ -73,11 +73,6 @@ export function AppSidebar() {
       icon: ListChecks
     },
     {
-      title: 'Procedure Categories',
-      url: '/servicecategories',
-      icon: ListChecks
-    },
-    {
       title: 'Staff',
       url: '/staff',
       icon: User

@@ -259,6 +259,7 @@ export interface ProductStock {
 export interface Service {
   id: number
   branch_id?: number | null
+  category_id: number
   name: string
   description?: string | null
   base_price: number
@@ -266,6 +267,12 @@ export interface Service {
   is_active: boolean
   created_at: string
   branch?: Branch
+  category?: ServiceCategory
+}
+export interface ServiceCategory {
+  id: number
+  name: string
+  parent_id: number
 }
 
 // ===============================

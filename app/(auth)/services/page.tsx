@@ -10,6 +10,7 @@ import { addList } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { AddModal } from './AddModal'
+import { CategoryModal } from './CategoryModal'
 import { Filter } from './Filter'
 import { List } from './List'
 
@@ -17,6 +18,7 @@ export default function Page() {
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(1)
   const [modalAddOpen, setModalAddOpen] = useState(false)
+  const [openCategoryModal, setOpenCategoryModal] = useState(false)
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('')
 
@@ -32,7 +34,7 @@ export default function Page() {
       setLoading(true)
       const { data, count, error } = await supabase
         .from('services')
-        .select('*', { count: 'exact' })
+        .select('*,category:category_id(name)', { count: 'exact' })
         .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
         .ilike('name', `%${filter}%`)
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
@@ -59,13 +61,12 @@ export default function Page() {
     <div>
       <div className="app__title">
         <h1 className="text-3xl font-normal">Procedures</h1>
-        <Button
-          variant="blue"
-          onClick={() => setModalAddOpen(true)}
-          className="ml-auto"
-        >
-          Add Procedue
-        </Button>
+        <div className="flex gap-2 ml-auto">
+          <Button onClick={() => setOpenCategoryModal(true)} variant="outline">
+            Manage Categories
+          </Button>
+          <Button onClick={() => setModalAddOpen(true)}>Add Procedure</Button>
+        </div>
       </div>
       <div className="app__content">
         <Filter filter={filter} setFilter={setFilter} />
@@ -112,6 +113,10 @@ export default function Page() {
         <AddModal
           isOpen={modalAddOpen}
           onClose={() => setModalAddOpen(false)}
+        />
+        <CategoryModal
+          isOpen={openCategoryModal}
+          onClose={() => setOpenCategoryModal(false)}
         />
       </div>
     </div>

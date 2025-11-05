@@ -55,9 +55,11 @@ export const List = () => {
       <table className="app__table">
         <thead className="app__thead">
           <tr>
-            <th className="app__th">Customer</th>
+            <th className="app__th">Client</th>
             <th className="app__th">Procedure</th>
             <th className="app__th">Schedule</th>
+            <th className="app__th">Procedure</th>
+            <th className="app__th">Docdor</th>
             <th className="app__th">Status</th>
             <th className="app__th"></th>
           </tr>

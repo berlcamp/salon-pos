@@ -60,8 +60,8 @@ export default function LoginBox({ message }: LoginBoxProps) {
           />
         </div> */}
 
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Welcome to POS App
+        <h1 className="text-4xl font-semibold text-gray-900">
+          <span style={{ fontFamily: 'Literaturnaya, serif' }}>Juana</span>
         </h1>
         <p className="text-sm text-gray-600">To get started, please sign in</p>
 

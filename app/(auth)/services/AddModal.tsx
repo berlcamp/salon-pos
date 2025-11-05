@@ -11,11 +11,18 @@ import {
   FormMessage
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { useAppDispatch } from '@/lib/redux/hook'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hook'
 import { addItem, updateList } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 
-import { Service } from '@/types'
+import { Service, ServiceCategory } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
@@ -26,7 +33,7 @@ import { z } from 'zod'
 // Always update this on other pages
 type ItemType = Service
 const table = 'services'
-const title = 'Services'
+const title = 'Procedure'
 
 interface ModalProps {
   isOpen: boolean
@@ -36,19 +43,28 @@ interface ModalProps {
 
 const FormSchema = z.object({
   name: z.string().min(1, 'Service Name is required'),
+  category_id: z.string().min(1, 'Category is required'),
   base_price: z.coerce.number().min(0, 'Base Price is required') // ✅ coercion fixes string->number from inputs
 })
 type FormType = z.infer<typeof FormSchema>
 
 export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   //
+  const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>(
+    []
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const dispatch = useAppDispatch()
+
+  const selectedBranchId = useAppSelector(
+    (state) => state.branch.selectedBranchId
+  )
 
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: editData ? editData.name : '',
+      category_id: editData ? editData.category_id.toString() : '',
       base_price: editData ? editData.base_price : 0
     }
   })
@@ -62,6 +78,8 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       const newData = {
         name: data.name.trim(),
         base_price: data.base_price,
+        category_id: data.category_id,
+        branch_id: selectedBranchId,
         org_id: process.env.NEXT_PUBLIC_ORG_ID
       }
 
@@ -103,12 +121,34 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
     }
   }
 
+  // ---------- LOAD DROPDOWNS ----------
+  useEffect(() => {
+    const fetchData = async () => {
+      const [s] = await Promise.all([
+        supabase
+          .from('service_categories')
+          .select()
+          .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
+          .order('name', { ascending: true })
+      ])
+
+      if (s.data) setServiceCategories(s.data)
+    }
+    fetchData()
+  }, [])
+
   useEffect(() => {
     form.reset({
       name: editData?.name || '',
-      base_price: editData?.base_price || 0
+      base_price: editData?.base_price || 0,
+      category_id: editData?.category_id.toString()
     })
   }, [form, editData, isOpen])
+
+  // ---------- DERIVED CATEGORY STRUCTURE ----------
+  const mainCategories = serviceCategories.filter((c) => !c.parent_id)
+  const subcategories = (parentId: number) =>
+    serviceCategories.filter((c) => c.parent_id === parentId)
 
   return (
     <Dialog
@@ -144,12 +184,12 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="app__formlabel_standard">
-                            Procedue Name
+                            Procedure Name
                           </FormLabel>
                           <FormControl>
                             <Input
                               className="app__input_standard"
-                              placeholder="Ex. Hair and Make-up"
+                              placeholder=""
                               type="text"
                               {...field}
                             />
@@ -159,6 +199,50 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       )}
                     />
                   </div>
+                  {/* CATEGORY DROPDOWN */}
+                  <FormField
+                    control={form.control}
+                    name="category_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="app__formlabel_standard">
+                          Category
+                        </FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value?.toString() ?? ''}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="app__input_standard">
+                              <SelectValue placeholder="Select category or subcategory" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {mainCategories.map((main) => (
+                              <div key={main.id}>
+                                <SelectItem value={main.id.toString()}>
+                                  {main.name}
+                                </SelectItem>
+
+                                {/* Subcategories (indented + prefixed) */}
+                                {subcategories(main.id).map((sub) => (
+                                  <SelectItem
+                                    key={sub.id}
+                                    value={sub.id.toString()}
+                                    className="pl-6 text-gray-600"
+                                  >
+                                    ↳ {sub.name}
+                                  </SelectItem>
+                                ))}
+                              </div>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <div>
                     <FormField
                       control={form.control}
@@ -166,7 +250,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="app__formlabel_standard">
-                            Base Price
+                            Per Session Price
                           </FormLabel>
                           <FormControl>
                             <Input

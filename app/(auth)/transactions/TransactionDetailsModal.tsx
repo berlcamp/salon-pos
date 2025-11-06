@@ -8,15 +8,17 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase/client'
+import { formatMoney } from '@/lib/utils'
+import { Transaction } from '@/types'
+import { format } from 'date-fns'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
 interface Props {
   isOpen: boolean
   onClose: () => void
-  transaction: any
+  transaction: Transaction
 }
 
 export function TransactionDetailsModal({
@@ -27,41 +29,53 @@ export function TransactionDetailsModal({
   const [cart, setCart] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Load cart items from Supabase
+  // ✅ Load items with joined product/service names
   useEffect(() => {
     if (!transaction?.id) return
+
     const fetchItems = async () => {
       setLoading(true)
       const { data, error } = await supabase
         .from('transaction_items')
-        .select('id, product_name, quantity, price')
+        .select(
+          `
+          id,
+          item_type,
+          quantity,
+          price,
+          total,
+          product_id,
+          service_id,
+          products ( name ),
+          services ( name )
+        `
+        )
         .eq('transaction_id', transaction.id)
 
-      if (error) console.error(error)
-      else setCart(data || [])
+      if (error) {
+        console.error(error)
+        toast.error('Failed to load transaction items')
+      } else {
+        // ✅ Normalize data for easier rendering
+        const formatted = data.map((item: any) => ({
+          id: item.id,
+          item_type: item.item_type,
+          quantity: Number(item.quantity),
+          price: Number(item.price),
+          total: Number(item.total),
+          name:
+            item.item_type === 'product'
+              ? item.products?.name || 'Unknown Product'
+              : item.services?.name || 'Unknown Service'
+        }))
+        setCart(formatted)
+      }
 
       setLoading(false)
     }
+
     fetchItems()
   }, [transaction])
-
-  const updateQuantity = (index: number, value: number) => {
-    const updated = [...cart]
-    updated[index].quantity = value
-    setCart(updated)
-  }
-
-  const handleSave = async () => {
-    // Save updated quantities for returns
-    for (const item of cart) {
-      await supabase
-        .from('transaction_items')
-        .update({ quantity: item.quantity })
-        .eq('id', item.id)
-    }
-    toast.success('Transaction updated!')
-    onClose()
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -74,25 +88,32 @@ export function TransactionDetailsModal({
           <p>Loading...</p>
         ) : (
           <>
-            <div className="space-y-2 border-b pb-4 mb-4">
+            <div className="space-y-2 border-b pb-4 mb-4 text-sm">
               <p>
-                <strong>Reference:</strong> {transaction.reference_number}
+                <strong>Reference:</strong>{' '}
+                {transaction.reference_number || '-'}
               </p>
               <p>
-                <strong>Customer:</strong> {transaction.customers?.name || '-'}
+                <strong>Customer:</strong> {transaction.customer?.name || '-'}
               </p>
               <p>
-                <strong>Service:</strong> {transaction.services?.name || '-'}
+                <strong>Date:</strong>{' '}
+                {transaction.created_at &&
+                  format(new Date(transaction.created_at), 'MMMM dd, yyyy')}
               </p>
               <p>
-                <strong>Date:</strong> {transaction.date}
+                <strong>Total Amount:</strong>{' '}
+                {formatMoney(transaction.total_amount)}
+              </p>
+              <p>
+                <strong>Payment Method:</strong> {transaction.payment_type}
               </p>
             </div>
 
             <table className="w-full text-sm border">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="text-left p-2">Product</th>
+                  <th className="text-left p-2">Product/Service</th>
                   <th className="text-right p-2">Qty</th>
                   <th className="text-right p-2">Price</th>
                   <th className="text-right p-2">Total</th>
@@ -100,24 +121,14 @@ export function TransactionDetailsModal({
               </thead>
               <tbody>
                 {cart.map((item, idx) => (
-                  <tr key={item.id} className="border-t">
-                    <td className="p-2">{item.product_name}</td>
+                  <tr key={idx} className="border-t">
+                    <td className="p-2">{item.name}</td>
+                    <td className="p-2 text-right">{item.quantity}</td>
                     <td className="p-2 text-right">
-                      <Input
-                        type="number"
-                        min={0}
-                        value={item.quantity ?? 0}
-                        onChange={(e) =>
-                          updateQuantity(idx, Number(e.target.value))
-                        }
-                        className="w-20 text-right"
-                      />
+                      ₱{item.price.toLocaleString()}
                     </td>
                     <td className="p-2 text-right">
-                      ₱{Number(item.price).toLocaleString()}
-                    </td>
-                    <td className="p-2 text-right">
-                      ₱{(item.quantity * item.price).toLocaleString()}
+                      ₱{item.total.toLocaleString()}
                     </td>
                   </tr>
                 ))}
@@ -127,9 +138,6 @@ export function TransactionDetailsModal({
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="outline" onClick={onClose}>
                 Close
-              </Button>
-              <Button variant="blue" onClick={handleSave}>
-                Save Changes
               </Button>
             </div>
           </>

@@ -16,7 +16,10 @@ export default function Page() {
   const [page, setPage] = useState(1)
   const [modalAddOpen, setModalAddOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [filter, setFilter] = useState('')
+  const [filter, setFilter] = useState({
+    keyword: '',
+    schedule_date: ''
+  })
 
   const selectedBranchId = useAppSelector(
     (state) => state.branch.selectedBranchId
@@ -30,13 +33,29 @@ export default function Page() {
     const fetchData = async () => {
       setLoading(true)
 
-      const { data, count, error } = await supabase
+      let query = supabase
         .from('bookings')
-        .select('*, customer:customer_id(name), service:service_id(name)', {
-          count: 'exact'
-        })
+        .select(
+          '*, customer:customer_id(name), doctor:doctor_id(name), services:booking_services(service:service_id(name,category:category_id(name)))',
+          { count: 'exact' }
+        )
         .eq('branch_id', selectedBranchId)
-        .ilike('remarks', `%${filter}%`)
+
+      if (filter.schedule_date)
+        query = query.eq('schedule_date', filter.schedule_date)
+
+      if (filter.keyword) {
+        const { data: customers } = await supabase
+          .from('customers')
+          .select('id')
+          .ilike('name', `%${filter.keyword}%`)
+          .eq('branch_id', selectedBranchId)
+        const ids = customers?.map((c) => c.id) || []
+        if (ids.length > 0) query = query.in('customer_id', ids)
+        else query = query.eq('id', 0) // no match
+      }
+
+      const { data, count, error } = await query
         .order('schedule_date', { ascending: false })
         .order('time_start', { ascending: false })
         .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
@@ -66,10 +85,9 @@ export default function Page() {
         </Button>
       </div>
 
+      <Filter filter={filter} setFilter={setFilter} />
       <div className="app__content">
-        <Filter filter={filter} setFilter={setFilter} />
-
-        <div className="mt-4 py-2 text-xs border-t border-gray-200 text-gray-500">
+        <div className="py-2 text-xs text-gray-500">
           Showing {Math.min((page - 1) * PER_PAGE + 1, totalCount)} to{' '}
           {Math.min(page * PER_PAGE, totalCount)} of {totalCount} results
         </div>

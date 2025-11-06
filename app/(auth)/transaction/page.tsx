@@ -42,13 +42,28 @@ import {
 import { useAppSelector } from '@/lib/redux/hook'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import { Customer, Product, ProductStock, Service, User } from '@/types'
+import {
+  Customer,
+  Product,
+  ProductStock,
+  Service,
+  ServiceCategory,
+  User
+} from '@/types'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, ChevronsUpDown, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { z } from 'zod'
+
+interface CategoryNode {
+  id: number
+  name: string
+  parent_id?: number | null
+  children: CategoryNode[]
+  services: Service[]
+}
 
 // ---------- ZOD SCHEMA ----------
 const FormSchema = z.object({
@@ -83,19 +98,13 @@ export default function CreateTransactionPage() {
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
   const [addCustomerOpen, setAddCustomerOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [categories, setCategories] = useState<ServiceCategory[]>([])
 
   const [isProductOpen, setIsProductOpen] = useState(false)
   const [productSearchTerm, setProductSearchTerm] = useState('')
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(productSearchTerm.toLowerCase())
-  )
-
-  const [isServiceOpen, setIsServiceOpen] = useState(false)
-  const [serviceSearchTerm, setServiceSearchTerm] = useState('')
-
-  const filteredServices = services.filter((s) =>
-    s.name.toLowerCase().includes(serviceSearchTerm.toLowerCase())
   )
 
   const selectedBranchId = useAppSelector(
@@ -219,7 +228,7 @@ export default function CreateTransactionPage() {
   // ---------- LOAD DROPDOWNS ----------
   useEffect(() => {
     const fetchData = async () => {
-      const [c, s, u, p] = await Promise.all([
+      const [c, s, u, p, cat] = await Promise.all([
         supabase
           .from('customers')
           .select()
@@ -237,12 +246,17 @@ export default function CreateTransactionPage() {
         supabase
           .from('products')
           .select('*,product_stocks:product_stocks(quantity,type)')
+          .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID),
+        supabase
+          .from('service_categories')
+          .select('*')
           .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
       ])
 
       if (c.data) setCustomers(c.data)
       if (s.data) setServices(s.data)
       if (u.data) setUsers(u.data)
+      if (cat.data) setCategories(cat.data)
       if (p.data) {
         const formatted = p.data.map((p) => ({
           ...p,
@@ -266,6 +280,41 @@ export default function CreateTransactionPage() {
   const filteredCustomers = customers.filter((c: Customer) =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const buildCategoryTree = (): CategoryNode[] => {
+    const categoryMap = new Map<number, CategoryNode>()
+
+    categories.forEach((cat: any) => {
+      categoryMap.set(cat.id, {
+        id: cat.id,
+        name: cat.name,
+        parent_id: cat.parent_id,
+        children: [],
+        services: []
+      })
+    })
+
+    services.forEach((s) => {
+      const cat = categoryMap.get(s.category_id)
+      if (cat) cat.services.push(s)
+    })
+
+    const tree: CategoryNode[] = []
+
+    categories.forEach((cat: any) => {
+      const node = categoryMap.get(cat.id)!
+      if (cat.parent_id) {
+        const parent = categoryMap.get(cat.parent_id)
+        if (parent) parent.children.push(node)
+      } else {
+        tree.push(node)
+      }
+    })
+
+    return tree
+  }
+
+  const categoryTree = buildCategoryTree()
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -459,93 +508,86 @@ export default function CreateTransactionPage() {
               )}
             />
 
-            {/* ---------- Services Field ---------- */}
-            <FormField
-              control={form.control}
-              name="service_id"
-              render={({ field }) => (
-                <FormItem className="mb-4">
-                  <FormLabel>Procedures</FormLabel>
-                  <Popover open={isServiceOpen} onOpenChange={setIsServiceOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className={cn(
-                          'w-full justify-between',
-                          !field.value && 'text-muted-foreground'
-                        )}
-                        type="button"
-                      >
-                        {field.value
-                          ? services.find((s) => s.id === field.value)?.name
-                          : 'Select procedure'}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
+            <FormItem>
+              <FormLabel>Procedures</FormLabel>
+              <div>
+                <Select
+                  onValueChange={(value) => {
+                    // const service = services.find(
+                    //   (s) => s.id.toString() === value
+                    // )
+                    // if (
+                    //   service &&
+                    //   !selectedServices.some((sv) => sv.id === service.id)
+                    // ) {
+                    //   setSelectedServices([...selectedServices, service])
+                    // }
+                    const alreadyInCart = cartItems.some(
+                      (item) =>
+                        item.item_type === 'service' &&
+                        item.service_id === value
+                    )
+                    if (!alreadyInCart) {
+                      addServiceToCart(Number(value))
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full border border-gray-300 bg-white rounded-md shadow-sm hover:border-gray-400 transition">
+                    <SelectValue placeholder="Select a procedure" />
+                  </SelectTrigger>
 
-                    <PopoverContent className="w-full p-0">
-                      <Command>
-                        <CommandInput
-                          placeholder="Search procedure..."
-                          onValueChange={(v) => setServiceSearchTerm(v)}
-                        />
-                        {filteredServices.length === 0 ? (
-                          <CommandEmpty>No services found.</CommandEmpty>
-                        ) : (
-                          <CommandGroup>
-                            {filteredServices.map((s) => {
-                              const alreadyInCart = cartItems.some(
-                                (item) =>
-                                  item.item_type === 'service' &&
-                                  item.service_id === s.id
-                              )
-                              return (
-                                <CommandItem
-                                  key={s.id}
-                                  value={s.id.toString()}
-                                  disabled={alreadyInCart} // ✅ disable if already added
-                                  onSelect={() => {
-                                    if (!alreadyInCart) {
-                                      field.onChange(s.id)
-                                      addServiceToCart(s.id)
-                                    }
-                                    setIsServiceOpen(false)
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      'mr-2 h-4 w-4',
-                                      s.id === field.value
-                                        ? 'opacity-100'
-                                        : 'opacity-0'
-                                    )}
-                                  />
-                                  <div className="flex flex-col">
-                                    <span
-                                      className={cn(
-                                        alreadyInCart &&
-                                          'opacity-50 line-through'
-                                      )}
-                                    >
-                                      {s.name}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      ₱{s.base_price.toFixed(2)}
-                                    </span>
-                                  </div>
-                                </CommandItem>
-                              )
-                            })}
-                          </CommandGroup>
-                        )}
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent className="!p-0 overflow-y-auto overflow-x-visible bg-white rounded-lg shadow-lg">
+                    <div className="py-2">
+                      {categoryTree.map((cat) => (
+                        <div key={`cat-${cat.id}`} className="space-y-1">
+                          {/* 🟦 Parent Category */}
+                          <div className="px-2">
+                            <div className="text-sm font-semibold text-gray-800 bg-gray-100 px-2 py-1 rounded">
+                              {cat.name}
+                            </div>
+
+                            {/* 🔹 Subcategories */}
+                            {cat.children.map((sub) => (
+                              <div key={`sub-${sub.id}`} className="ml-3 mt-1">
+                                <div className="text-sm text-gray-700 font-medium bg-gray-50 px-2 py-1 rounded">
+                                  {sub.name}
+                                </div>
+
+                                {/* ⚪ Services under Subcategory */}
+                                {sub.services.map((s) => (
+                                  <SelectItem
+                                    key={`srv-${s.id}`}
+                                    value={s.id.toString()}
+                                    className="ml-5 text-sm hover:bg-blue-50 cursor-pointer rounded px-2 py-1"
+                                  >
+                                    {s.name}
+                                  </SelectItem>
+                                ))}
+                              </div>
+                            ))}
+
+                            {/* ⚪ Category-level Services */}
+                            {cat.services.length > 0 && (
+                              <div className="ml-3 mt-1">
+                                {cat.services.map((s) => (
+                                  <SelectItem
+                                    key={`srv-${s.id}`}
+                                    value={s.id.toString()}
+                                    className="ml-5 text-sm hover:bg-blue-50 cursor-pointer rounded px-2 py-1"
+                                  >
+                                    {s.name}
+                                  </SelectItem>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </SelectContent>
+                </Select>
+              </div>
+            </FormItem>
 
             {/* ATTENDANTS */}
             {form.watch('service_id') && (

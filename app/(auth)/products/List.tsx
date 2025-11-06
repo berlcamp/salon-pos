@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/lib/redux/hook'
 import { deleteItem } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
+import { formatMoney } from '@/lib/utils'
 import { Product, RootState } from '@/types'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
@@ -49,7 +50,8 @@ export const List = () => {
             <th className="app__th">Category</th>
             <th className="app__th text-right">Price</th>
             <th className="app__th text-right">Stock</th>
-            <th className="app__th"></th>
+            <th className="app__th text-right">Expired Stocks</th>
+            <th className="app__th"> </th>
           </tr>
         </thead>
         <tbody>
@@ -58,9 +60,14 @@ export const List = () => {
               <td className="app__td">
                 {item.name} ({item.unit})
               </td>
-              <td className="app__td">{item.category || '-'}</td>
+              <td className="app__td">
+                {' '}
+                {typeof item.category === 'object'
+                  ? item.category?.name
+                  : item.category || '-'}
+              </td>
               <td className="app__td text-right">
-                ₱{Number(item.selling_price || 0).toFixed(2)}
+                {formatMoney(item.selling_price)}
               </td>
               <td
                 className={`app__td text-right ${
@@ -71,6 +78,7 @@ export const List = () => {
               >
                 {item.stock_qty}
               </td>
+              <td className="app__td text-right">{item.total_expired}</td>
               <td className="app__td">
                 <div className="flex items-center justify-center gap-2">
                   <Button

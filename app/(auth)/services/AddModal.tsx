@@ -83,34 +83,41 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         org_id: process.env.NEXT_PUBLIC_ORG_ID
       }
 
-      // If exists (editing), update it
       if (editData?.id) {
+        // ---- UPDATE ----
         const { error } = await supabase
           .from(table)
           .update(newData)
           .eq('id', editData.id)
 
-        if (error) {
-          throw new Error(error.message)
-        } else {
-          //Update list on redux
-          dispatch(updateList({ ...newData, id: editData.id })) // ✅ Update Redux with new data
-          onClose()
+        if (error) throw new Error(error.message)
+
+        // ✅ Fetch updated record with category join
+        const { data: updated } = await supabase
+          .from(table)
+          .select('*, category:category_id(name)')
+          .eq('id', editData.id)
+          .single()
+
+        if (updated) {
+          dispatch(updateList(updated))
         }
+
+        onClose()
       } else {
-        // Add new one
-        const { data, error } = await supabase
+        // ---- INSERT ----
+        const { data: inserted, error } = await supabase
           .from(table)
           .insert([newData])
-          .select()
+          .select('*, category:category_id(name)') // ✅ include join
 
-        if (error) {
-          throw new Error(error.message)
-        } else {
-          // Insert new item to Redux
-          dispatch(addItem({ ...newData, id: data[0].id }))
-          onClose()
+        if (error) throw new Error(error.message)
+
+        if (inserted?.[0]) {
+          dispatch(addItem(inserted[0]))
         }
+
+        onClose()
       }
 
       toast.success('Successfully saved!')

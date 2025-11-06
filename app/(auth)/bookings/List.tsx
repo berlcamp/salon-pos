@@ -6,6 +6,7 @@ import { useAppDispatch } from '@/lib/redux/hook'
 import { deleteItem } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 import { Booking, RootState } from '@/types'
+import { format } from 'date-fns'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import Avatar from 'react-avatar'
@@ -56,17 +57,18 @@ export const List = () => {
         <thead className="app__thead">
           <tr>
             <th className="app__th">Client</th>
-            <th className="app__th">Procedure</th>
+            <th className="app__th">Procedures</th>
             <th className="app__th">Schedule</th>
             <th className="app__th">Procedure</th>
-            <th className="app__th">Docdor</th>
+            <th className="app__th">Physician</th>
+            <th className="app__th">Added by</th>
             <th className="app__th">Status</th>
             <th className="app__th"></th>
           </tr>
         </thead>
         <tbody>
-          {list.map((item: ItemType) => (
-            <tr key={item.id} className="app__tr">
+          {list.map((item: ItemType, idx) => (
+            <tr key={idx} className="app__tr">
               <td className="app__td">
                 {item.customer ? (
                   <div className="flex items-center gap-2">
@@ -85,10 +87,25 @@ export const List = () => {
                   '-'
                 )}
               </td>
-              <td className="app__td">{item.service?.name}</td>
               <td className="app__td">
-                {item.schedule_date} - {item.time_start}
+                <div className="space-x-1 space-y-1">
+                  {item.services?.map((s, idx) => (
+                    <div key={idx} className="font-medium">
+                      {s.service?.name}({s.service?.category?.name})
+                    </div>
+                  ))}
+                </div>
               </td>
+              <td className="app__td">
+                {item.schedule_date &&
+                  format(new Date(item.schedule_date), 'MMM d, yyyy')}{' '}
+                -{' '}
+                {item.time_start &&
+                  format(new Date(item.time_start), 'hh:mm a')}
+              </td>
+              <td className="app__td capitalize">{item.status}</td>
+              <td className="app__td capitalize">{item.doctor?.name}</td>
+              <td className="app__td capitalize">{item.created_by}</td>
               <td className="app__td capitalize">{item.status}</td>
               <td className="app__td">
                 <div className="flex gap-2 justify-center">

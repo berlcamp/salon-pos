@@ -251,6 +251,7 @@ export interface ProductStock {
   remarks: string
   created_at: string
   transaction_date: string
+  expiration_date: string
 }
 
 // ===============================
@@ -288,41 +289,38 @@ export interface Customer {
   created_at: string
 }
 
-// ===============================
-// SERVICE ATTENDANTS
-// ===============================
-export interface ServiceAttendant {
-  id: number
-  booking_id: number
-  staff_id: number
-  role?: string | null
-  commission?: number | null
-  created_at: string
-  staff?: Staff
-}
-
 export type Booking = {
   id: number
   customer_id?: number
   user_id?: number
   branch_id: number
+  doctor_id: number
   schedule_date: string
+  created_by: string
   time_start: string
-  status?: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
+  status?: 'scheduled' | 're-scheduled' | 'done' | 'completed' | 'canceled'
   notes?: string
   remarks: string
   org_id: string
   customer?: Customer
   branch?: Branch
   attendants?: string[]
-  service_id?: number
-  service?: Service
+  procedures?: Service[]
+  services?: BookingService[]
+  doctor?: User
 }
 
 export type BookingAttendant = {
   id: number
   booking_id: number
   user_id: number
+}
+
+export interface BookingService {
+  id: number
+  booking_id: number
+  service_id: number
+  service?: Service
 }
 
 // types/Transaction.ts

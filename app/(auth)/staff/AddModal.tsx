@@ -19,11 +19,11 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
-import { useAppDispatch } from '@/lib/redux/hook'
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hook'
 import { addItem, updateList } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 
-import { Branch, User } from '@/types'
+import { User } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
@@ -46,8 +46,7 @@ const FormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().min(1, 'Email is required'),
   position: z.string().min(1, 'Position is required'),
-  type: z.string().min(1, 'Account Type is required'),
-  branch_id: z.coerce.number().min(1, 'Branch is required') // ✅ coercion fixes string->number from inputs
+  type: z.string().min(1, 'Account Type is required')
 })
 
 type FormType = z.infer<typeof FormSchema>
@@ -55,7 +54,9 @@ type FormType = z.infer<typeof FormSchema>
 export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   //
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [branches, setBranches] = useState<Branch[]>([])
+  const selectedBranchId = useAppSelector(
+    (state) => state.branch.selectedBranchId
+  )
 
   const dispatch = useAppDispatch()
 
@@ -65,8 +66,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
       name: editData ? editData.name : '',
       email: editData ? editData.email : '',
       position: editData ? editData.position : '',
-      type: editData ? editData.type : '',
-      branch_id: editData ? editData.branch_id : 0
+      type: editData ? editData.type : ''
     }
   })
 
@@ -111,7 +111,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
         position: data.position,
         user_id,
         type: data.type,
-        branch_id: data.branch_id,
+        branch_id: selectedBranchId,
         org_id: process.env.NEXT_PUBLIC_ORG_ID
       }
 
@@ -124,13 +124,23 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
         if (error) throw new Error(error.message)
 
-        dispatch(updateList({ ...newData, id: editData.id }))
+        // ✅ Fetch updated record with category join
+        const { data: updated } = await supabase
+          .from(table)
+          .select('*,branch:branch_id(name)')
+          .eq('id', editData.id)
+          .single()
+
+        if (updated) {
+          dispatch(updateList(updated))
+        }
+
         onClose()
       } else {
         const { data: inserted, error } = await supabase
           .from(table)
           .insert([newData])
-          .select()
+          .select('*,branch:branch_id(name)')
           .single()
 
         if (error) {
@@ -152,23 +162,11 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   }
 
   useEffect(() => {
-    const fetchBranches = async () => {
-      const { data } = await supabase
-        .from('branches')
-        .select()
-        .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
-      if (data) setBranches(data)
-    }
-    fetchBranches()
-  }, [])
-
-  useEffect(() => {
     form.reset({
       name: editData?.name || '',
       email: editData?.email || '',
       position: editData?.position || '',
-      type: editData?.type || '',
-      branch_id: editData?.branch_id || 0
+      type: editData?.type || ''
     })
   }, [form, editData, isOpen])
 
@@ -253,16 +251,24 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="app__formlabel_standard">
-                            Position
+                            Type
                           </FormLabel>
-                          <FormControl>
-                            <Input
-                              className="app__input_standard"
-                              placeholder="Ex. Nurse"
-                              type="text"
-                              {...field}
-                            />
-                          </FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Doctor">Doctor</SelectItem>
+                              <SelectItem value="Attendant">
+                                Attendant
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -274,7 +280,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                       name="type"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>System Account Type</FormLabel>
+                          <FormLabel>System Account</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             defaultValue={field.value}
@@ -287,37 +293,6 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                             <SelectContent>
                               <SelectItem value="user">User</SelectItem>
                               <SelectItem value="admin">Admin</SelectItem>
-                            </SelectContent>
-                          </Select>
-
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div>
-                    <FormField
-                      control={form.control}
-                      name="branch_id"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Branch</FormLabel>
-                          <Select
-                            // Always pass a string to keep it controlled
-                            onValueChange={(value) =>
-                              field.onChange(Number(value))
-                            }
-                            value={field.value ? String(field.value) : ''}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select branch" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {branches.map((b) => (
-                                <SelectItem key={b.id} value={b.id.toString()}>
-                                  {b.name}
-                                </SelectItem>
-                              ))}
                             </SelectContent>
                           </Select>
 

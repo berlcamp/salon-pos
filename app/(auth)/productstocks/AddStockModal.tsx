@@ -27,6 +27,7 @@ import { useAppDispatch, useAppSelector } from '@/lib/redux/hook'
 import { addItem } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { Product } from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, ChevronsUpDown } from 'lucide-react'
@@ -54,7 +55,7 @@ export const AddStockModal = ({
   onClose: () => void
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [products, setProducts] = useState<{ id: number; name: string }[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [open, setOpen] = useState(false)
 
   const dispatch = useAppDispatch()
@@ -79,7 +80,7 @@ export const AddStockModal = ({
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name,category,unit')
+        .select()
         .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
         .order('name', { ascending: true })
 
@@ -159,7 +160,7 @@ export const AddStockModal = ({
                     name="product_id"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Product</FormLabel>
+                        <FormLabel>Product / Item</FormLabel>
                         <Popover open={open} onOpenChange={setOpen}>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -175,7 +176,7 @@ export const AddStockModal = ({
                                 {field.value
                                   ? products.find((p) => p.id === field.value)
                                       ?.name
-                                  : 'Select product'}
+                                  : 'Select product/item'}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </FormControl>
@@ -203,7 +204,7 @@ export const AddStockModal = ({
                                             : 'opacity-0'
                                         )}
                                       />
-                                      {p.name}
+                                      {p.name} ({p.unit})
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
@@ -230,6 +231,20 @@ export const AddStockModal = ({
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name="expiration_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Expiration Date (optional)</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   {/*  DATE */}
                   <FormField
                     control={form.control}
@@ -243,20 +258,6 @@ export const AddStockModal = ({
                             {...field}
                             value={field.value || ''}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="expiration_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Expiration Date (optional)</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

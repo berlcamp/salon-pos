@@ -1,56 +1,89 @@
-// components/FilterComponent.tsx
 'use client'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { CalendarIcon, Search } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
 interface FormType {
   keyword: string
+  schedule_date: string
 }
 
 export const Filter = ({
   filter,
   setFilter
 }: {
-  filter: string
-  setFilter: (filter: string) => void
+  filter: { keyword: string; schedule_date: string }
+  setFilter: (filter: { keyword: string; schedule_date: string }) => void
 }) => {
-  const { reset, register, handleSubmit } = useForm<FormType>()
+  const { reset, register, handleSubmit } = useForm<FormType>({
+    defaultValues: filter
+  })
 
-  // Submit handler
-  const onSubmit = async (data: FormType) => {
-    setFilter(data.keyword)
-  }
-
-  const handleReset = () => {
-    setFilter('')
-    reset({
-      keyword: ''
+  const onSubmit = (data: FormType) => {
+    setFilter({
+      keyword: data.keyword || '',
+      schedule_date: data.schedule_date || ''
     })
   }
 
+  const handleReset = () => {
+    reset({ keyword: '', schedule_date: '' })
+    setFilter({ keyword: '', schedule_date: '' })
+  }
+
   return (
-    <div className="mt-4">
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Input
-          {...register('keyword')}
-          placeholder="Search customer by name"
-          className="mb-4 max-w-xs"
-        />
-        <div className="flex justify-start space-x-2">
+    <div className="mt-4 border border-gray-200 bg-white rounded-sm mb-4 shadow-sm p-4">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-wrap items-end gap-3"
+      >
+        {/* Keyword Search */}
+        <div className="flex flex-col">
+          <label className="text-xs font-medium text-gray-600 mb-1">
+            Customer Name
+          </label>
+          <div className="flex items-center border rounded-md px-2">
+            <Search size={16} className="text-gray-400" />
+            <Input
+              {...register('keyword')}
+              placeholder="Search customer..."
+              className="border-0 focus-visible:ring-0 text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Schedule Date */}
+        <div className="flex flex-col">
+          <label className="text-xs font-medium text-gray-600 mb-1">
+            Schedule Date
+          </label>
+          <div className="flex items-center border rounded-md px-2">
+            <CalendarIcon size={16} className="text-gray-400" />
+            <Input
+              {...register('schedule_date')}
+              type="date"
+              className="border-0 focus-visible:ring-0 text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-2 ml-auto">
           <Button
             variant="blue"
             type="submit"
-            size="xs"
-            onClick={() => setFilter(filter)}
+            size="sm"
+            className="rounded-md shadow-sm"
           >
-            Submit Filter
+            Apply Filter
           </Button>
           <Button
-            size="xs"
+            size="sm"
             type="button"
             variant="outline"
+            className="rounded-md"
             onClick={handleReset}
           >
             Reset

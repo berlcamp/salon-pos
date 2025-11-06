@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/lib/redux/hook'
 import { deleteItem } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
+import { formatMoney } from '@/lib/utils'
 import { RootState, Service } from '@/types' // Import the RootState type
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
@@ -63,7 +64,7 @@ export const List = ({}) => {
       <table className="app__table">
         <thead className="app__thead">
           <tr>
-            <th className="app__th">Procedue Name</th>
+            <th className="app__th">Procedure Name</th>
             <th className="app__th">Per Session Price</th>
             <th className="app__th"></th>
           </tr>
@@ -72,9 +73,13 @@ export const List = ({}) => {
           {list.map((item: ItemType) => (
             <tr key={item.id} className="app__tr">
               <td className="app__td">
-                {item.name} ({item.category?.name})
+                {item.name} ({' '}
+                {typeof item.category === 'object'
+                  ? item.category?.name
+                  : item.category || '-'}
+                )
               </td>
-              <td className="app__td">{item.base_price}</td>
+              <td className="app__td">{formatMoney(item.base_price || 0)}</td>
               <td className="app__td">
                 <div className="flex items-center justify-center gap-2">
                   {' '}

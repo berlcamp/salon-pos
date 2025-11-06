@@ -38,9 +38,9 @@ interface ModalProps {
 
 const FormSchema = z.object({
   name: z.string().min(1, 'Customer Name is required'),
-  contact_number: z.string().min(1, 'Contact No is required'),
+  contact_number: z.string().min(1, 'Contact # is required'),
   birthday: z.string().optional(),
-  address: z.string().min(1, 'Address is required')
+  address: z.string().optional()
 })
 type FormType = z.infer<typeof FormSchema>
 
@@ -108,10 +108,13 @@ export const AddModal = ({
         if (error) {
           throw new Error(error.message)
         } else {
-          // Insert new item to Redux
-          dispatch(addItem({ ...newData, id: data.id }))
-          // ✅ trigger callback
-          if (onAdded) onAdded(data)
+          // ✅ trigger callback, but exclude dispatch because this is called outsize /customers page
+          if (onAdded) {
+            onAdded(data)
+          } else {
+            // Insert new item to Redux
+            dispatch(addItem({ ...newData, id: data.id }))
+          }
           onClose()
         }
       }
@@ -125,11 +128,14 @@ export const AddModal = ({
   }
 
   useEffect(() => {
-    form.reset({
-      name: editData?.name || '',
-      contact_number: editData?.contact_number || '',
-      address: editData?.address || ''
-    })
+    if (editData) {
+      form.reset({
+        name: editData.name,
+        contact_number: editData.contact_number,
+        address: editData.address,
+        birthday: editData.birthday || undefined
+      })
+    }
   }, [form, editData, isOpen])
 
   return (

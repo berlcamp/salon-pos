@@ -27,6 +27,7 @@ export const listSlice = createSlice({
     },
     // Add a new item to the list
     addItem: (state, action: PayloadAction<any>) => {
+      console.log('addItem payload:', action.payload)
       state.value.unshift(action.payload)
     },
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 import { AddModal as AddCustomerModal } from '@/app/(auth)/customers/AddModal'
 import { Button } from '@/components/ui/button'
@@ -33,7 +34,12 @@ import { useAppDispatch, useAppSelector } from '@/lib/redux/hook'
 import { addItem, updateList } from '@/lib/redux/listSlice'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import { Booking, Customer as CustomerList } from '@/types'
+import {
+  Booking,
+  Customer as CustomerList,
+  Service,
+  ServiceCategory
+} from '@/types'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, ChevronsUpDown, Plus } from 'lucide-react'
@@ -42,15 +48,23 @@ import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { z } from 'zod'
 
-interface Service {
-  id: string
-  name: string
-  duration_minutes?: number
-}
+// interface Service {
+//   id: string
+//   name: string
+//   duration_minutes?: number
+// }
 
 interface User {
   id: string
   name: string
+}
+
+interface CategoryNode {
+  id: number
+  name: string
+  parent_id?: number | null
+  children: CategoryNode[]
+  services: Service[]
 }
 
 // ---------- ZOD SCHEMA ----------
@@ -58,8 +72,9 @@ const FormSchema = z.object({
   customer_id: z.coerce.number().min(1, 'Client is required'), // ✅ coercion fixes string->number from inputs
   schedule_date: z.string().min(1, 'Schedule date is required'),
   time_start: z.string().min(1, 'Start time is required'),
-  service_id: z.coerce.number().min(1, 'Service is required'), // ✅ coercion fixes string->number from inputs
-  attendants: z.array(z.string()).min(1, 'At least one attendant is required'),
+  attendants: z.array(z.string()).optional(),
+  procedures: z.array(z.string()).optional(),
+  doctor_id: z.coerce.number().min(1, 'Physician is required'), // ✅ coercion fixes string->number from inputs
   remarks: z.string().optional()
 })
 type FormType = z.infer<typeof FormSchema>
@@ -81,26 +96,31 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
   const [customers, setCustomers] = useState<CustomerList[]>([])
   const [services, setServices] = useState<Service[]>([])
+  const [categories, setCategories] = useState<ServiceCategory[]>([])
   const [users, setUsers] = useState<User[]>([])
 
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [addCustomerOpen, setAddCustomerOpen] = useState(false)
 
+  const [selectedServices, setSelectedServices] = useState<Service[]>([])
+
+  const user = useAppSelector((state) => state.user.user)
+
   const selectedBranchId = useAppSelector(
     (state) => state.branch.selectedBranchId
   )
 
   const form = useForm<FormType>({
-    resolver: zodResolver(FormSchema),
-    defaultValues: {
-      customer_id: editData?.customer_id || 0,
-      schedule_date: editData?.schedule_date || '',
-      time_start: editData?.time_start || '',
-      service_id: editData?.service_id || 0,
-      attendants: editData?.attendants || [],
-      remarks: editData?.remarks || ''
-    }
+    resolver: zodResolver(FormSchema)
+    // defaultValues: {
+    //   customer_id: editData?.customer_id || 0,
+    //   schedule_date: editData?.schedule_date || '',
+    //   time_start: editData?.time_start || '',
+    //   attendants: editData?.attendants || [],
+    //   doctor_id: editData?.doctor_id || 0,
+    //   remarks: editData?.remarks || ''
+    // }
   })
 
   const selectedCustomer = customers.find(
@@ -115,7 +135,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   // ---------- LOAD DROPDOWNS ----------
   useEffect(() => {
     const fetchData = async () => {
-      const [c, s, u] = await Promise.all([
+      const [c, s, u, cat] = await Promise.all([
         supabase
           .from('customers')
           .select()
@@ -123,21 +143,26 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID),
         supabase
           .from('services')
-          .select('id, name, duration_minutes')
+          .select('*,category:category_id(name)')
           .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID),
         supabase
           .from('users')
           .select('id, name')
           .eq('branch_id', selectedBranchId)
+          .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID),
+        supabase
+          .from('service_categories')
+          .select('*')
           .eq('org_id', process.env.NEXT_PUBLIC_ORG_ID)
       ])
 
       if (c.data) setCustomers(c.data)
       if (s.data) setServices(s.data)
       if (u.data) setUsers(u.data)
+      if (cat.data) setCategories(cat.data)
     }
     fetchData()
-  }, [])
+  }, [selectedBranchId])
 
   const toTimestamp = (date: string, time: string) => {
     return new Date(`${date}T${time}:00`).toISOString()
@@ -150,70 +175,139 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
 
     try {
       const org_id = process.env.NEXT_PUBLIC_ORG_ID as string
+      let bookingId: number
 
-      const newData: Omit<Booking, 'id'> = {
+      // ✅ Prepare data
+      const newData = {
         customer_id: data.customer_id,
+        doctor_id: data.doctor_id,
         branch_id: selectedBranchId,
         schedule_date: data.schedule_date,
         time_start: toTimestamp(data.schedule_date, data.time_start),
-        service_id: data.service_id,
         remarks: data.remarks || '',
-        attendants: data.attendants,
         org_id,
-        status: 'pending'
+        created_by: user?.name
       }
 
-      let bookingId: number
-
-      // ✅ UPDATE booking
+      // ------------------------------------------------
+      // 🟢 UPDATE EXISTING BOOKING
+      // ------------------------------------------------
       if (editData?.id) {
+        bookingId = editData.id
+
+        // Update base booking info
         const { error: updateError } = await supabase
           .from('bookings')
           .update(newData)
-          .eq('id', editData.id)
+          .eq('id', bookingId)
         if (updateError) throw new Error(updateError.message)
 
-        bookingId = editData.id
+        // Clean related tables first
+        await Promise.all([
+          supabase
+            .from('booking_attendants')
+            .delete()
+            .eq('booking_id', bookingId),
+          supabase.from('booking_services').delete().eq('booking_id', bookingId)
+        ])
 
-        // 🧹 Remove old attendants first
-        await supabase
-          .from('booking_attendants')
-          .delete()
-          .eq('booking_id', bookingId)
+        // ✅ Insert attendants
+        if ((data.attendants ?? []).length > 0) {
+          const attendantsData = data.attendants?.map((user_id) => ({
+            booking_id: bookingId,
+            user_id: Number(user_id)
+          }))
+          const { error: attendantsError } = await supabase
+            .from('booking_attendants')
+            .insert(attendantsData)
+          if (attendantsError) throw new Error(attendantsError.message)
+        }
 
+        // ✅ Insert selected services
+        if (selectedServices?.length > 0) {
+          const servicesData = selectedServices.map((service) => ({
+            booking_id: bookingId,
+            service_id: Number(service.id)
+          }))
+          const { error: serviceError } = await supabase
+            .from('booking_services')
+            .insert(servicesData)
+          if (serviceError) throw new Error(serviceError.message)
+        }
+
+        // ✅ Fetch updated data
+        const { data: updated, error: fetchError } = await supabase
+          .from('bookings')
+          .select(
+            `*, 
+           customer:customer_id(name), 
+           doctor:doctor_id(name), 
+           services:booking_services(service:service_id(name,category:category_id(name)))`
+          )
+          .eq('id', bookingId)
+          .single()
+
+        if (fetchError) throw new Error(fetchError.message)
+        if (updated) dispatch(updateList(updated))
         toast.success('✅ Booking updated successfully.')
-        dispatch(updateList({ ...newData, id: bookingId }))
-      } else {
-        // ✅ INSERT booking
+      }
+
+      // ------------------------------------------------
+      // 🟢 INSERT NEW BOOKING
+      // ------------------------------------------------
+      else {
         const { data: inserted, error: insertError } = await supabase
           .from('bookings')
-          .insert([newData])
+          .insert(newData)
           .select('id')
           .single()
         if (insertError) throw new Error(insertError.message)
-
         bookingId = inserted.id
+
+        // ✅ Insert attendants
+        if ((data.attendants ?? []).length > 0) {
+          const attendantsData = data.attendants?.map((user_id) => ({
+            booking_id: bookingId,
+            user_id: Number(user_id)
+          }))
+          const { error: attendantsError } = await supabase
+            .from('booking_attendants')
+            .insert(attendantsData)
+          if (attendantsError) throw new Error(attendantsError.message)
+        }
+
+        // ✅ Insert services
+        if (selectedServices?.length > 0) {
+          const servicesData = selectedServices.map((service) => ({
+            booking_id: bookingId,
+            service_id: Number(service.id)
+          }))
+          const { error: serviceError } = await supabase
+            .from('booking_services')
+            .insert(servicesData)
+          if (serviceError) throw new Error(serviceError.message)
+        }
+
+        // ✅ Fetch complete new record
+        const { data: fullBooking, error: fetchError } = await supabase
+          .from('bookings')
+          .select(
+            `*, 
+           customer:customer_id(name), 
+           doctor:doctor_id(name), 
+           services:booking_services(service:service_id(name,category:category_id(name)))`
+          )
+          .eq('id', bookingId)
+          .single()
+
+        if (fetchError) throw new Error(fetchError.message)
+        if (fullBooking) dispatch(addItem(fullBooking))
         toast.success('✅ Booking added successfully.')
-        dispatch(addItem({ ...newData, id: bookingId }))
-      }
-
-      // ✅ Insert attendants
-      if (data.attendants && data.attendants.length > 0) {
-        const attendantsData = data.attendants.map((user_id) => ({
-          booking_id: bookingId,
-          user_id: Number(user_id)
-        }))
-
-        const { error: attendantsError } = await supabase
-          .from('booking_attendants')
-          .insert(attendantsData)
-
-        if (attendantsError) throw new Error(attendantsError.message)
       }
 
       onClose()
     } catch (err) {
-      console.error('Error saving booking:', err)
+      console.error('❌ Error saving booking:', err)
       toast.error('Something went wrong while saving.')
     } finally {
       setIsSubmitting(false)
@@ -221,28 +315,76 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
   }
 
   useEffect(() => {
-    if (editData) {
-      const formatTime = (ts: string) => {
-        if (!ts) return ''
-        const d = new Date(ts)
-        const hours = d.getHours().toString().padStart(2, '0')
-        const minutes = d.getMinutes().toString().padStart(2, '0')
-        return `${hours}:${minutes}`
-      }
+    if (!editData) return
 
-      form.reset({
-        customer_id: editData.customer_id,
-        schedule_date: editData.schedule_date,
-        time_start: formatTime(editData.time_start),
-        service_id: editData.service_id,
-        remarks: editData.remarks,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        attendants: (editData.attendants || []).map((a: any) =>
-          typeof a === 'object' ? a.user_id.toString() : a.toString()
-        )
-      })
+    const formatTime = (ts: string) => {
+      if (!ts) return ''
+      const d = new Date(ts)
+      const hours = d.getHours().toString().padStart(2, '0')
+      const minutes = d.getMinutes().toString().padStart(2, '0')
+      return `${hours}:${minutes}`
     }
-  }, [form, editData, isOpen])
+
+    // ✅ Extract attendants and services safely
+    const attendants = (editData.attendants || []).map((a: any) =>
+      typeof a === 'object' ? a.user_id?.toString() : a?.toString()
+    )
+
+    const servicesFromEdit = (editData.services || [])
+      .map((s: any) => s.service)
+      .filter(Boolean)
+
+    // ✅ Reset form
+    form.reset({
+      customer_id: editData.customer_id,
+      doctor_id: editData.doctor_id,
+      schedule_date: editData.schedule_date,
+      time_start: formatTime(editData.time_start),
+      remarks: editData.remarks ?? '',
+      attendants,
+      procedures: servicesFromEdit.map((s: any) => s.id?.toString())
+    })
+
+    // ✅ Ensure state is updated only *after* reset
+    setTimeout(() => {
+      setSelectedServices(servicesFromEdit)
+    }, 0)
+  }, [editData, form, isOpen])
+
+  const buildCategoryTree = (): CategoryNode[] => {
+    const categoryMap = new Map<number, CategoryNode>()
+
+    categories.forEach((cat: any) => {
+      categoryMap.set(cat.id, {
+        id: cat.id,
+        name: cat.name,
+        parent_id: cat.parent_id,
+        children: [],
+        services: []
+      })
+    })
+
+    services.forEach((s) => {
+      const cat = categoryMap.get(s.category_id)
+      if (cat) cat.services.push(s)
+    })
+
+    const tree: CategoryNode[] = []
+
+    categories.forEach((cat: any) => {
+      const node = categoryMap.get(cat.id)!
+      if (cat.parent_id) {
+        const parent = categoryMap.get(cat.parent_id)
+        if (parent) parent.children.push(node)
+      } else {
+        tree.push(node)
+      }
+    })
+
+    return tree
+  }
+
+  const categoryTree = buildCategoryTree()
 
   // ---------- RENDER ----------
   return (
@@ -268,7 +410,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
           <div className="app__modal_dialog_content">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                   {/* CUSTOMER */}
                   <FormField
                     control={form.control}
@@ -321,30 +463,32 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                                 </CommandEmpty>
                               ) : (
                                 <CommandGroup>
-                                  {filteredCustomers.map((c: CustomerList) => (
-                                    <CommandItem
-                                      key={c.id}
-                                      value={c.id.toString()}
-                                      onSelect={() => {
-                                        form.setValue(
-                                          'customer_id',
-                                          Number(c.id)
-                                        )
-                                        setIsAddCustomerOpen(false) // ✅ hide dropdown on select
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          'mr-2 h-4 w-4',
-                                          c.id.toString() ===
-                                            field.value?.toString()
-                                            ? 'opacity-100'
-                                            : 'opacity-0'
-                                        )}
-                                      />
-                                      {c.name}
-                                    </CommandItem>
-                                  ))}
+                                  {filteredCustomers.map(
+                                    (c: CustomerList, idx) => (
+                                      <CommandItem
+                                        key={idx}
+                                        value={c.id.toString()}
+                                        onSelect={() => {
+                                          form.setValue(
+                                            'customer_id',
+                                            Number(c.id)
+                                          )
+                                          setIsAddCustomerOpen(false) // ✅ hide dropdown on select
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            'mr-2 h-4 w-4',
+                                            c.id.toString() ===
+                                              field.value?.toString()
+                                              ? 'opacity-100'
+                                              : 'opacity-0'
+                                          )}
+                                        />
+                                        {c.name}
+                                      </CommandItem>
+                                    )
+                                  )}
                                   <div className="border-t mt-1">
                                     <Button
                                       variant="ghost"
@@ -400,30 +544,160 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                   />
 
                   {/* SERVICE */}
+                  {/* ---------- SERVICE FIELD ---------- */}
+                  <FormItem>
+                    <FormLabel>Procedures</FormLabel>
+                    <div>
+                      <Select
+                        onValueChange={(value) => {
+                          const service = services.find(
+                            (s) => s.id.toString() === value
+                          )
+                          if (
+                            service &&
+                            !selectedServices.some((sv) => sv.id === service.id)
+                          ) {
+                            setSelectedServices([...selectedServices, service])
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full border border-gray-300 bg-white rounded-md shadow-sm hover:border-gray-400 transition">
+                          <SelectValue placeholder="Select a procedure" />
+                        </SelectTrigger>
+
+                        <SelectContent className="!p-0 overflow-y-auto overflow-x-visible bg-white rounded-lg shadow-lg">
+                          <div className="py-2">
+                            {categoryTree.map((cat) => (
+                              <div key={`cat-${cat.id}`} className="space-y-1">
+                                {/* 🟦 Parent Category */}
+                                <div className="px-2">
+                                  <div className="text-sm font-semibold text-gray-800 bg-gray-100 px-2 py-1 rounded">
+                                    {cat.name}
+                                  </div>
+
+                                  {/* 🔹 Subcategories */}
+                                  {cat.children.map((sub) => (
+                                    <div
+                                      key={`sub-${sub.id}`}
+                                      className="ml-3 mt-1"
+                                    >
+                                      <div className="text-sm text-gray-700 font-medium bg-gray-50 px-2 py-1 rounded">
+                                        {sub.name}
+                                      </div>
+
+                                      {/* ⚪ Services under Subcategory */}
+                                      {sub.services.map((s) => (
+                                        <SelectItem
+                                          key={`srv-${s.id}`}
+                                          value={s.id.toString()}
+                                          className="ml-5 text-sm hover:bg-blue-50 cursor-pointer rounded px-2 py-1"
+                                        >
+                                          {s.name}
+                                        </SelectItem>
+                                      ))}
+                                    </div>
+                                  ))}
+
+                                  {/* ⚪ Category-level Services */}
+                                  {cat.services.length > 0 && (
+                                    <div className="ml-3 mt-1">
+                                      {cat.services.map((s) => (
+                                        <SelectItem
+                                          key={`srv-${s.id}`}
+                                          value={s.id.toString()}
+                                          className="ml-5 text-sm hover:bg-blue-50 cursor-pointer rounded px-2 py-1"
+                                        >
+                                          {s.name}
+                                        </SelectItem>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Selected services list */}
+                    <div className="mt-2 space-y-1 border rounded p-2 bg-gray-50">
+                      {selectedServices.length === 0 && (
+                        <p className="text-xs text-gray-400 italic">
+                          No procedures added
+                        </p>
+                      )}
+
+                      {selectedServices.map((s, idx) => (
+                        <div
+                          key={s.id ?? idx}
+                          className="flex justify-between items-center text-sm bg-white border rounded px-2 py-1"
+                        >
+                          <span>
+                            {s.name}
+                            {s.category?.name && (
+                              <span className="text-gray-500 text-xs ml-1">
+                                ({s.category.name})
+                              </span>
+                            )}
+                          </span>
+
+                          <Button
+                            size="xs"
+                            variant="destructive"
+                            onClick={() =>
+                              setSelectedServices(
+                                selectedServices.filter((sv) => sv.id !== s.id)
+                              )
+                            }
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </FormItem>
+                  {/* DOCTOR */}
                   <FormField
                     control={form.control}
-                    name="service_id"
+                    name="doctor_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Procedures</FormLabel>
+                        <FormLabel className="app__formlabel_standard">
+                          Physician
+                        </FormLabel>
                         <Select
-                          // Always pass a string to keep it controlled
-                          onValueChange={(value) =>
-                            field.onChange(Number(value))
-                          }
+                          onValueChange={field.onChange}
                           value={field.value ? String(field.value) : ''}
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select service" />
-                          </SelectTrigger>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Physician" />
+                            </SelectTrigger>
+                          </FormControl>
                           <SelectContent>
-                            {services.map((s) => (
-                              <SelectItem key={s.id} value={s.id.toString()}>
-                                {s.name}
+                            {users.map((u) => (
+                              <SelectItem key={u.id} value={u.id.toString()}>
+                                {u.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* REMARKS */}
+                  <FormField
+                    control={form.control}
+                    name="remarks"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Optional" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -442,7 +716,7 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                               : ''
                           }
                         >
-                          Docdors
+                          Physician attendants
                         </FormLabel>
                         <div className="flex flex-wrap gap-2">
                           {users.map((u) => (
@@ -451,19 +725,21 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                               type="button"
                               size="sm"
                               variant={
-                                field.value.includes(u.id.toString())
+                                field.value?.includes(u.id.toString())
                                   ? 'blue'
                                   : 'outline'
                               }
                               onClick={() => {
-                                const exists = field.value.includes(
+                                const exists = field.value?.includes(
                                   u.id.toString()
                                 )
                                 const updated = exists
-                                  ? field.value.filter(
+                                  ? field.value?.filter(
                                       (id) => id !== u.id.toString()
                                     )
-                                  : [...field.value, u.id.toString()] // ✅ convert to string
+                                  : field.value
+                                    ? [...field.value, u.id.toString()]
+                                    : [] // ✅ convert to string
                                 field.onChange(updated)
                                 form.trigger('attendants')
                               }}
@@ -472,21 +748,6 @@ export const AddModal = ({ isOpen, onClose, editData }: ModalProps) => {
                             </Button>
                           ))}
                         </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* REMARKS */}
-                  <FormField
-                    control={form.control}
-                    name="remarks"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Remarks</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Optional remarks" {...field} />
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

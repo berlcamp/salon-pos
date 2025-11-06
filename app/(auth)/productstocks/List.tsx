@@ -45,7 +45,7 @@ export const List = () => {
         <thead className="app__thead">
           <tr>
             <th className="app__th">Product Name</th>
-            <th className="app__th">Date</th>
+            <th className="app__th">Transaction Date</th>
             <th className="app__th text-right">Type</th>
             <th className="app__th text-right">Quantity</th>
             <th className="app__th"></th>
@@ -55,9 +55,27 @@ export const List = () => {
           {list.map((item: ProductStock) => (
             <tr key={item.id} className="app__tr">
               <td className="app__td">
-                <div>{item.product?.name}</div>
-                <div className="text-xs"> ({item.product?.category})</div>
+                <div className="font-semibold">{item.product?.name}</div>
+                <div className="text-xs">({item.product?.category})</div>
+
+                {item.expiration_date && (
+                  <div
+                    className={`text-xs ${
+                      new Date(item.expiration_date) < new Date()
+                        ? 'text-red-600 font-semibold'
+                        : 'text-gray-600'
+                    }`}
+                  >
+                    Expiration: {item.expiration_date}{' '}
+                    {new Date(item.expiration_date) < new Date() && (
+                      <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1 py-0.5 rounded">
+                        Expired
+                      </span>
+                    )}
+                  </div>
+                )}
               </td>
+
               <td className="app__td">{item.transaction_date}</td>
               <td className="app__td text-center">{item.type}</td>
               <td className="app__td text-center">{item.quantity}</td>

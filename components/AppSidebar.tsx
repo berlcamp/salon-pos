@@ -117,73 +117,76 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel className="border-t rounded-none border-gray-200 text-gray-500">
-            Inventory
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {inventoryItems.map((item) => {
-                const isActive = pathname === item.url
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link
-                        href={item.url}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
-                          isActive
-                            ? 'bg-gray-100 text-gray-900 font-medium' // Active item
-                            : 'hover:bg-gray-50 text-gray-700'
-                        }`}
-                      >
-                        <item.icon
-                          className={`text-base ${
-                            isActive ? 'text-blue-600' : 'text-gray-500'
-                          }`}
-                        />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+
         {user?.type === 'admin' && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="border-t rounded-none border-gray-200 text-gray-500">
-              Settings
-            </SidebarGroupLabel>
-            <SidebarGroupContent className="pb-20">
-              <SidebarMenu>
-                {settingItems.map((item) => {
-                  const isActive = pathname === item.url
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <Link
-                          href={item.url}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
-                            isActive
-                              ? 'bg-gray-100 text-gray-900 font-medium' // Active item
-                              : 'hover:bg-gray-50 text-gray-700'
-                          }`}
-                        >
-                          <item.icon
-                            className={`text-base ${
-                              isActive ? 'text-blue-600' : 'text-gray-500'
+          <>
+            <SidebarGroup>
+              <SidebarGroupLabel className="border-t rounded-none border-gray-200 text-gray-500">
+                Settings
+              </SidebarGroupLabel>
+              <SidebarGroupContent className="pb-0">
+                <SidebarMenu>
+                  {settingItems.map((item) => {
+                    const isActive = pathname === item.url
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild>
+                          <Link
+                            href={item.url}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+                              isActive
+                                ? 'bg-gray-100 text-gray-900 font-medium' // Active item
+                                : 'hover:bg-gray-50 text-gray-700'
                             }`}
-                          />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+                          >
+                            <item.icon
+                              className={`text-base ${
+                                isActive ? 'text-blue-600' : 'text-gray-500'
+                              }`}
+                            />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel className="border-t rounded-none border-gray-200 text-gray-500">
+                Inventory
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {inventoryItems.map((item) => {
+                    const isActive = pathname === item.url
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild>
+                          <Link
+                            href={item.url}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+                              isActive
+                                ? 'bg-gray-100 text-gray-900 font-medium' // Active item
+                                : 'hover:bg-gray-50 text-gray-700'
+                            }`}
+                          >
+                            <item.icon
+                              className={`text-base ${
+                                isActive ? 'text-blue-600' : 'text-gray-500'
+                              }`}
+                            />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
         )}
       </SidebarContent>
     </Sidebar>

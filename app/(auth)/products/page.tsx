@@ -36,12 +36,13 @@ export default function Page() {
         .from('products')
         .select(
           `
-    *,
-    product_stocks:product_stocks (
-      quantity,
-      type
-    )
-  `,
+  id,
+  name,
+  unit,
+  category,
+  selling_price,
+  product_stocks:product_stocks (quantity, type)
+`,
           { count: 'exact' }
         )
         .eq('type', 'for sale')
@@ -54,15 +55,34 @@ export default function Page() {
         console.error('Error fetching products:', error)
       } else {
         // calculate stock
-        const formatted = data.map((p) => ({
-          ...p,
-          stock_qty:
-            p.product_stocks?.reduce(
-              (acc: number, s: ProductStock) =>
-                s.type === 'in' ? acc + s.quantity : acc - s.quantity,
-              0
-            ) || 0
-        }))
+        const formatted = (data || []).map((p) => {
+          const stocks = (p.product_stocks as ProductStock[]) || []
+
+          // Define today's date (ignore time for safety)
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+
+          // Separate valid (not expired) and expired stocks
+          const validStocks = stocks.filter(
+            (s) => !s.expiration_date || new Date(s.expiration_date) >= today
+          )
+          const expiredStocks = stocks.filter(
+            (s) => s.expiration_date && new Date(s.expiration_date) < today
+          )
+
+          // Compute total quantity (excluding expired)
+          const stock_qty = validStocks.reduce(
+            (acc: number, s) =>
+              s.type === 'in' ? acc + s.quantity : acc - s.quantity,
+            0
+          )
+
+          // Count total expired (you can also sum quantities if you prefer)
+          const total_expired = expiredStocks.length
+
+          return { ...p, stock_qty, total_expired }
+        })
+
         dispatch(addList(formatted || []))
         setTotalCount(count || 0)
       }

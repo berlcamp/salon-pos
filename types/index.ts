@@ -329,6 +329,7 @@ export interface Transaction {
   id: number
   org_id: number
   reference_number: string
+  transaction_number: string
   payment_type: string
   customer_name?: string | null
   total_amount: number
@@ -337,4 +338,30 @@ export interface Transaction {
   branch_id?: number | null
   customer_id?: number | null
   customer?: Customer
+  transaction_items: TransactionItem[]
+}
+
+export interface TransactionItem {
+  id: number
+  transaction_id: number | null
+  item_type: 'product' | 'service' | string
+  product_id: number | null
+  service_id: number | null
+  unit: string | null
+  quantity: number
+  price: number
+  total: number
+
+  products?: {
+    id: number
+    name: string
+  } | null
+  services?: {
+    id: number
+    name: string
+  } | null
+}
+
+export interface TransactionWithItems extends Transaction {
+  transaction_items: TransactionItem[]
 }

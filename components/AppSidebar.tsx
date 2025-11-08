@@ -1,4 +1,5 @@
 import {
+  BarChart,
   BookOpenCheck,
   Home,
   ListChecks,
@@ -30,6 +31,11 @@ export function AppSidebar() {
       title: 'Home',
       url: '/home',
       icon: Home
+    },
+    {
+      title: 'Dashboard',
+      url: '/dashboard',
+      icon: BarChart
     },
     {
       title: 'Transactions',

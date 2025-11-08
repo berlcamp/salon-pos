@@ -90,8 +90,11 @@ export const List = () => {
               <td className="app__td">
                 <div className="space-x-1 space-y-1">
                   {item.services?.map((s, idx) => (
-                    <div key={idx} className="font-medium">
-                      {s.service?.name}({s.service?.category?.name})
+                    <div key={idx}>
+                      <span className="font-semibold">
+                        {s.service?.category?.name}
+                      </span>{' '}
+                      <span>- {s.service?.name}</span>
                     </div>
                   ))}
                 </div>

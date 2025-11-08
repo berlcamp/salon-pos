@@ -22,7 +22,7 @@ export const List = () => {
       <table className="app__table">
         <thead className="app__thead">
           <tr>
-            <th className="app__th">Ref No.</th>
+            <th className="app__th">Transaction No.</th>
             <th className="app__th">Customer</th>
             <th className="app__th">Date</th>
             <th className="app__th text-right">Amount</th>
@@ -32,7 +32,7 @@ export const List = () => {
         <tbody>
           {list.map((item: Transaction) => (
             <tr key={item.id} className="app__tr">
-              <td className="app__td">{item.reference_number}</td>
+              <td className="app__td">{item.transaction_number}</td>
               <td className="app__td">
                 {item.customer ? (
                   <div className="flex items-center gap-2">

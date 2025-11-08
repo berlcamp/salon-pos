@@ -41,7 +41,7 @@ import {
 } from '@/components/ui/table'
 import { useAppSelector } from '@/lib/redux/hook'
 import { supabase } from '@/lib/supabase/client'
-import { cn } from '@/lib/utils'
+import { cn, formatMoney } from '@/lib/utils'
 import {
   Customer,
   Product,
@@ -122,13 +122,43 @@ export default function CreateTransactionPage() {
 
     try {
       // 1️⃣ Create transaction
+      const todayPrefix = new Date()
+        .toISOString()
+        .slice(0, 10)
+        .replace(/-/g, '') // e.g. "20251108"
+      const transactionPrefix = todayPrefix // "20251108"
+
+      // ✅ Fetch last transaction_number for today
+      const { data: lastTransaction } = await supabase
+        .from('transactions')
+        .select('transaction_number')
+        .like('transaction_number', `${transactionPrefix}-%`)
+        .order('transaction_number', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      let nextSequence = 1
+
+      if (lastTransaction?.transaction_number) {
+        const lastNum = parseInt(
+          lastTransaction.transaction_number.split('-')[1],
+          10
+        )
+        if (!isNaN(lastNum)) {
+          nextSequence = lastNum + 1
+        }
+      }
+
+      const newTransactionNumber = `${transactionPrefix}-${nextSequence}`
+
+      // ✅ Insert new transaction
       const { data: transactionData, error: transactionError } = await supabase
         .from('transactions')
         .insert([
           {
             org_id: Number(process.env.NEXT_PUBLIC_ORG_ID),
             customer_id: data.customer_id,
-            reference_number: Math.floor(1000000 + Math.random() * 9000000), // ✅ random 7-digit number
+            transaction_number: newTransactionNumber,
             payment_type: data.payment_type,
             total_amount: totalAmount,
             branch_id: selectedBranchId
@@ -690,8 +720,8 @@ export default function CreateTransactionPage() {
                         />
                       </div>
                     </TableCell>
-                    <TableCell>₱{item.price.toFixed(2)}</TableCell>
-                    <TableCell>₱{item.total.toFixed(2)}</TableCell>
+                    <TableCell>{formatMoney(item.price)}</TableCell>
+                    <TableCell>{formatMoney(item.total)}</TableCell>
                     <TableCell>
                       <Button
                         type="button"
@@ -708,7 +738,7 @@ export default function CreateTransactionPage() {
             </Table>
 
             <div className="text-right mt-2 font-bold">
-              Total: ₱{totalAmount.toFixed(2)}
+              Total: {formatMoney(totalAmount)}
             </div>
           </div>
 

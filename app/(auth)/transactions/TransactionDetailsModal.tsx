@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input' // ✅ use your existing input component if available
 import { supabase } from '@/lib/supabase/client'
 import { formatMoney } from '@/lib/utils'
 import { Transaction } from '@/types'
@@ -28,6 +29,10 @@ export function TransactionDetailsModal({
 }: Props) {
   const [cart, setCart] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [referenceNumber, setReferenceNumber] = useState(
+    transaction.reference_number || ''
+  )
 
   // ✅ Load items with joined product/service names
   useEffect(() => {
@@ -77,6 +82,33 @@ export function TransactionDetailsModal({
     fetchItems()
   }, [transaction])
 
+  // ✅ Update reference number in Supabase
+  const handleUpdateReference = async () => {
+    if (!transaction?.id) return
+    if (!referenceNumber.trim()) {
+      toast.error('Reference number cannot be empty')
+      return
+    }
+
+    setSaving(true)
+    const { error } = await supabase
+      .from('transactions')
+      .update({ reference_number: referenceNumber.trim() })
+      .eq('id', transaction.id)
+
+    if (error) {
+      console.error(error)
+      toast.error('Failed to update reference number')
+    } else {
+      toast.success('Reference number updated successfully')
+    }
+
+    setSaving(false)
+  }
+
+  useEffect(() => {
+    setReferenceNumber(transaction.reference_number || '')
+  }, [isOpen, transaction.reference_number])
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
@@ -88,11 +120,26 @@ export function TransactionDetailsModal({
           <p>Loading...</p>
         ) : (
           <>
+            {/* Header Info */}
             <div className="space-y-2 border-b pb-4 mb-4 text-sm">
-              <p>
-                <strong>Reference:</strong>{' '}
-                {transaction.reference_number || '-'}
-              </p>
+              <div className="flex items-center gap-2">
+                <strong>Reference:</strong>
+                <Input
+                  value={referenceNumber}
+                  onChange={(e) => setReferenceNumber(e.target.value)}
+                  placeholder="Enter reference number"
+                  className="w-48 h-7 text-sm"
+                />
+                <Button
+                  variant="blue"
+                  size="xs"
+                  onClick={handleUpdateReference}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Update'}
+                </Button>
+              </div>
+
               <p>
                 <strong>Customer:</strong> {transaction.customer?.name || '-'}
               </p>
@@ -110,6 +157,7 @@ export function TransactionDetailsModal({
               </p>
             </div>
 
+            {/* Item List */}
             <table className="w-full text-sm border">
               <thead className="bg-gray-100">
                 <tr>
@@ -135,6 +183,7 @@ export function TransactionDetailsModal({
               </tbody>
             </table>
 
+            {/* Footer */}
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="outline" onClick={onClose}>
                 Close
